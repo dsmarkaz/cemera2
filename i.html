@@ -3,76 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Receiver Console</title>
+  <title>Receiver Console</title>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    /* LINE 13: Background image URL */
-    body, html { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #010a05; background-image: url(a.jpg); background-size: cover; background-position: center; overflow: hidden; }
+    
+    body, html { 
+      height: 100%; 
+      width: 100%; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background-color: #010a05; 
+      background-image: url('a.jpg'); 
+      background-size: cover; 
+      background-position: center; 
+      overflow-y: auto; 
+    }
 
     .hero {
       position: relative;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       padding: 20px;
     }
 
-    /* Extremely Transparent Glass Card */
+    .status-bar {
+      font-size: 13px;
+      color: #00ff87;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: inline-block;
+    }
+
+    .streams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
     .glass-card {
       position: relative;
       width: 100%;
-      max-width: 520px;
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 24px;
       border: 1px solid rgba(255, 255, 255, 0.15);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       padding: 16px;
       text-align: center;
     }
 
-    .status-bar {
-      font-size: 12px;
+    .card-status {
+      font-size: 11px;
       color: #00ff87;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 6px 12px;
-      border-radius: 20px;
-      display: inline-block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .card-status.offline {
+      color: #ff4757;
     }
 
     .video-frame-card {
       position: relative;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
+      min-height: 200px;
     }
 
-    video { width: 100%; display: block; border-radius: 20px; background: #000; transition: filter 0.3s ease; }
+    video { width: 100%; display: block; border-radius: 18px; background: #000; transition: filter 0.3s ease; }
     .video-blurred { filter: blur(25px); }
 
-    /* YouTube-style Control Bar Overlay */
     .controls-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 10px;
-      padding: 4px 10px;
+      margin-top: 12px;
+      padding: 2px 6px;
     }
 
     .timer {
       font-family: monospace;
       font-size: 14px;
       color: #ffffff;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       padding: 4px 10px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -80,15 +108,15 @@
 
     .icon-btns {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     .icon-btn {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -100,100 +128,143 @@
 
     .icon-btn:hover {
       background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.1);
+      transform: scale(1.08);
     }
   </style>
 </head>
 <body>
 
   <div class="hero">
-    <div class="glass-card">
-      <div class="status-bar" id="status">Waiting for connection...</div>
-
-      <div class="video-frame-card">
-        <video id="remoteFeed" autoplay playsinline></video>
-      </div>
-
-      <div class="controls-bar">
-        <div class="timer" id="timer">00:00</div>
-        <div class="icon-btns">
-          <button class="icon-btn" title="Blur / Unblur" onclick="toggleBlur()">👁️</button>
-          <button class="icon-btn" title="Download Recording" onclick="downloadVideoFile()">📥</button>
-        </div>
-      </div>
-    </div>
+    <div class="status-bar" id="status">Status: Connecting...</div>
+    <div class="streams-grid" id="streamsGrid"></div>
   </div>
 
   <script>
-    const peer = new Peer('my-secret-admin-id-1234');
-    let mediaRecorder;
-    let recordedChunks = [];
-    let timerInterval = null;
-    let secondsElapsed = 0;
+    const peer = new Peer('my-secret-admin-id-1234', {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
+    });
+
+    let totalUserCount = 0;
+    let activeUserCount = 0;
 
     peer.on('open', () => {
-      document.getElementById('status').innerText = "Status: Online | Waiting...";
+      document.getElementById('status').innerText = "Status: Online | Waiting for users...";
     });
 
     peer.on('call', (call) => {
-      document.getElementById('status').innerText = "Status: Live 🔴";
+      totalUserCount++;
+      activeUserCount++;
+      updateMainStatus();
+
       call.answer();
 
+      const callId = `User_${totalUserCount}_${Date.now()}`;
+
       call.on('stream', (remoteStream) => {
-        const videoElem = document.getElementById('remoteFeed');
-        videoElem.srcObject = remoteStream;
-
-        recordedChunks = [];
-        startTimer();
-
-        mediaRecorder = new MediaRecorder(remoteStream);
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) recordedChunks.push(event.data);
-        };
-
-        mediaRecorder.start();
+        createVideoCard(callId, remoteStream, totalUserCount);
 
         remoteStream.getVideoTracks()[0].onended = () => {
-          document.getElementById('status').innerText = "Status: Disconnected";
-          stopTimer();
-          if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-          }
+          markUserDisconnected(callId);
         };
       });
     });
 
-    function toggleBlur() {
-      const video = document.getElementById('remoteFeed');
-      video.classList.toggle('video-blurred');
+    function updateMainStatus() {
+      document.getElementById('status').innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
     }
 
-    function startTimer() {
-      stopTimer();
-      secondsElapsed = 0;
-      timerInterval = setInterval(() => {
-        secondsElapsed++;
-        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-        const secs = String(secondsElapsed % 60).padStart(2, '0');
-        document.getElementById('timer').innerText = `${mins}:${secs}`;
+    function createVideoCard(id, stream, userNumber) {
+      const grid = document.getElementById('streamsGrid');
+
+      const card = document.createElement('div');
+      card.className = 'glass-card';
+      card.id = `card_${id}`;
+
+      card.innerHTML = `
+        <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
+        <div class="video-frame-card">
+          <video id="video_${id}" autoplay playsinline></video>
+        </div>
+        <div class="controls-bar">
+          <div class="timer" id="timer_${id}">00:00</div>
+          <div class="icon-btns">
+            <button class="icon-btn" title="Blur / Unblur" onclick="toggleBlur('video_${id}')">👁️</button>
+            <button class="icon-btn" title="Download Recording" onclick="downloadVideo('${id}')">📥</button>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(card);
+
+      const videoElem = document.getElementById(`video_${id}`);
+      videoElem.srcObject = stream;
+
+      const chunks = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.start();
+      videoElem._recorder = mediaRecorder;
+      videoElem._chunks = chunks;
+
+      let seconds = 0;
+      const timerElem = document.getElementById(`timer_${id}`);
+      const timerInterval = setInterval(() => {
+        seconds++;
+        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        timerElem.innerText = `${mins}:${secs}`;
       }, 1000);
+
+      videoElem._timerInterval = timerInterval;
     }
 
-    function stopTimer() {
-      if (timerInterval) clearInterval(timerInterval);
+    function markUserDisconnected(id) {
+      const videoElem = document.getElementById(`video_${id}`);
+      const badgeElem = document.getElementById(`badge_${id}`);
+
+      if (videoElem) {
+        if (videoElem._timerInterval) clearInterval(videoElem._timerInterval);
+        if (videoElem._recorder && videoElem._recorder.state !== "inactive") {
+          videoElem._recorder.stop();
+        }
+      }
+
+      if (badgeElem) {
+        badgeElem.innerText = "⚪ DISCONNECTED (Saved)";
+        badgeElem.classList.add('offline');
+      }
+
+      activeUserCount--;
+      if (activeUserCount < 0) activeUserCount = 0;
+      updateMainStatus();
     }
 
-    function downloadVideoFile() {
-      if (!recordedChunks.length) {
+    function toggleBlur(videoId) {
+      const video = document.getElementById(videoId);
+      if (video) video.classList.toggle('video-blurred');
+    }
+
+    function downloadVideo(id) {
+      const videoElem = document.getElementById(`video_${id}`);
+      if (!videoElem || !videoElem._chunks || !videoElem._chunks.length) {
         alert("No recording available to download!");
         return;
       }
-      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const blob = new Blob(videoElem._chunks, { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `recording_${Date.now()}.webm`;
+      a.download = `${id}_recording.webm`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
