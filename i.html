@@ -1,170 +1,81 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <title>Live Feed Receiver</title>
+
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
   <style>
-    body { 
-      background: #090d16; color: #38bdf8; text-align: center; 
-      font-family: monospace; padding: 20px; margin: 0; 
-    }
 
-    h1 { margin-bottom: 5px; font-size: 22px; }
-    #status { font-size: 14px; color: #00ff87; margin-bottom: 20px; }
+    body { background: #090d16; color: #38bdf8; text-align: center; font-family: monospace; padding: 20px; }
 
-    /* Grid layout to keep videos bounded */
-    .video-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 15px;
-      padding: 10px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    video { width: 100%; max-width: 600px; border: 2px solid #38bdf8; border-radius: 12px; margin-top: 20px; background: #000; }
 
-    /* Card styling (Laptop screen का 1/4th size) */
-    .video-card {
-      position: relative;
-      background: #111827;
-      border: 1px solid #38bdf8;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.3s ease;
-    }
-
-    /* Controls header for each video */
-    .card-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #1e293b;
-      padding: 6px 10px;
-      font-size: 12px;
-      color: #fff;
-    }
-
-    .btn-group button {
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-      margin-left: 6px;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .min-btn { background: #eab308 !important; color: #000 !important; }
-    .close-btn { background: #ef4444 !important; }
-
-    video {
-      width: 100%;
-      height: 220px;
-      object-fit: cover;
-      background: #000;
-      display: block;
-    }
-
-    /* Minimized strip bar */
-    .video-card.minimized video {
-      display: none;
-    }
-    .video-card.minimized {
-      height: auto;
-      border-color: #eab308;
-    }
   </style>
+
 </head>
+
 <body>
 
+
+
   <h1>Live Feed Receiver</h1>
+
   <p id="status">Status: Connecting Server...</p>
 
-  <div class="video-grid" id="videoGrid"></div>
+  <video id="remoteFeed" autoplay playsinline muted controls></video>
+
+
 
   <script>
+
     const peer = new Peer('dsmarkaz-receiver-key-999');
-    const videoGrid = document.getElementById('videoGrid');
+
+
 
     peer.on('open', (id) => {
+
       document.getElementById('status').innerText = "Status: Online | Waiting for User...";
+
     });
+
+
 
     peer.on('call', (call) => {
+
       document.getElementById('status').innerText = "Status: Connected! Receiving Feed...";
+
       call.answer();
 
+      
+
       call.on('stream', (remoteStream) => {
-        // Purana card hatao agar pehle se mojood ho taakay naya stream connect ho sakay
-        const existingCard = document.getElementById(`card-${call.peer}`);
-        if (existingCard) existingCard.remove();
 
-        // Naya Card Create karein
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.id = `card-${call.peer}`;
+        const video = document.getElementById('remoteFeed');
 
-        // Top Control Bar Header
-        const controls = document.createElement('div');
-        controls.className = 'card-controls';
-        
-        const peerLabel = document.createElement('span');
-        peerLabel.innerText = `User: ${call.peer.substring(0, 8)}...`;
-
-        const btnGroup = document.createElement('div');
-        btnGroup.className = 'btn-group';
-
-        // Minimize Button (➖)
-        const minBtn = document.createElement('button');
-        minBtn.className = 'min-btn';
-        minBtn.innerText = '➖';
-        minBtn.title = 'Minimize';
-        minBtn.onclick = () => {
-          card.classList.toggle('minimized');
-        };
-
-        // Close Button (❌)
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'close-btn';
-        closeBtn.innerText = '✖';
-        closeBtn.title = 'Close Feed';
-        closeBtn.onclick = () => {
-          call.close();
-          card.remove();
-        };
-
-        btnGroup.appendChild(minBtn);
-        btnGroup.appendChild(closeBtn);
-        controls.appendChild(peerLabel);
-        controls.appendChild(btnGroup);
-
-        // Video Feed
-        const video = document.createElement('video');
         video.srcObject = remoteStream;
-        video.autoplay = true;
-        video.playsInline = true;
-        video.muted = true;
-        video.controls = true;
-
-        card.appendChild(controls);
-        card.appendChild(video);
-        videoGrid.appendChild(card);
 
         video.play().catch(e => console.log("Autoplay error:", e));
+
       });
 
-      call.on('close', () => {
-        const card = document.getElementById(`card-${call.peer}`);
-        if (card) card.remove();
-      });
     });
+
+
 
     peer.on('error', (err) => {
+
       console.error(err);
+
     });
+
   </script>
+
 </body>
+
 </html>
