@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Receiver Console</title>
 
-  <!-- PeerJS لائبریری -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- Socket.io لائبریری (Render Server کے لیے) -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -191,61 +191,71 @@
   </div>
 
   <script>
-    const METERED_USERNAME = "89e52e462d770536efbe1fa511a5edaa5fe8";
-    const METERED_CREDENTIAL = "kQh1+S+i0r/K4P50";
+    // 🔴 Render سرور بننے کے بعد اپنا بیک اینڈ URL یہاں تبدیل کریں
+    const BACKEND_URL = "https://YOUR-RENDER-BACKEND-URL.onrender.com";
 
-    const peer = new Peer("danish-cam-9988", {
-      config: {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          { urls: "turn:global.relay.metered.ca:80", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
-          { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
-          { urls: "turn:global.relay.metered.ca:443", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
-          { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: METERED_USERNAME, credential: METERED_CREDENTIAL }
-        ],
-        iceTransportPolicy: "all"
-      }
-    });
-
+    let socket = null;
+    let peerConnections = {};
     let totalUserCount = 0;
     let activeUserCount = 0;
 
-    peer.on("open", (id) => {
-      document.getElementById("status").innerText = "Status: Online | Waiting for users...";
-      console.log("ADMIN PEER ONLINE WITH ID:", id);
-    });
+    function initSocket() {
+      socket = io(BACKEND_URL);
 
-    peer.on("error", (error) => {
-      console.error("PeerJS ERROR:", error);
-      if (error.type === 'unavailable-id') {
-        document.getElementById("status").innerText = "Status: ID Already Active (Close other tabs)";
-      } else {
-        document.getElementById("status").innerText = "Status: Connection Error (" + error.type + ")";
-      }
-    });
-
-    peer.on("call", (call) => {
-      totalUserCount++;
-      activeUserCount++;
-      updateMainStatus();
-
-      try {
-        call.answer(); 
-      } catch (error) {
-        console.error("Call answer error:", error);
-      }
-
-      const callId = `User_${totalUserCount}_${Date.now()}`;
-
-      call.on("stream", (remoteStream) => {
-        createVideoCard(callId, remoteStream, totalUserCount, call);
+      socket.on("connect", () => {
+        document.getElementById("status").innerText = "Status: Online | Waiting for users...";
+        socket.emit("join-room", "stream-room-1");
       });
 
-      call.on("close", () => markUserDisconnected(callId));
-      call.on("error", () => markUserDisconnected(callId));
-    });
+      socket.on("disconnect", () => {
+        document.getElementById("status").innerText = "Status: Disconnected";
+      });
+
+      // جب صارف کی طرف سے آفر موصول ہو
+      socket.on("offer", async (data) => {
+        totalUserCount++;
+        activeUserCount++;
+        updateMainStatus();
+
+        const senderId = data.sender;
+        const callId = `User_${totalUserCount}_${Date.now()}`;
+
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        });
+
+        peerConnections[senderId] = { pc, callId };
+
+        pc.ontrack = (event) => {
+          createVideoCard(callId, event.streams[0], totalUserCount, senderId);
+        };
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit("ice-candidate", { target: senderId, candidate: event.candidate });
+          }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+            markUserDisconnected(callId);
+          }
+        };
+
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        socket.emit("answer", { target: senderId, sdp: answer });
+      });
+
+      socket.on("ice-candidate", async (data) => {
+        const conn = peerConnections[data.sender];
+        if (conn && conn.pc) {
+          await conn.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      });
+    }
 
     function updateMainStatus() {
       document.getElementById("status").innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
@@ -264,7 +274,7 @@
       return "";
     }
 
-    function createVideoCard(id, stream, userNumber, call) {
+    function createVideoCard(id, stream, userNumber, senderId) {
       if (document.getElementById(`card_${id}`)) return;
 
       const grid = document.getElementById("streamsGrid");
@@ -275,7 +285,7 @@
       card.innerHTML = `
         <div class="card-header">
           <div class="card-status" id="badge_${id}">🟡 USER #${userNumber} - CONNECTING</div>
-          <button class="card-close-btn" title="Close" onclick="closeCard('${id}')">✖</button>
+          <button class="card-close-btn" title="Close" onclick="closeCard('${id}', '${senderId}')">✖</button>
         </div>
         <div class="video-frame-card">
           <video id="video_${id}" autoplay playsinline muted></video>
@@ -296,7 +306,6 @@
       videoElem.srcObject = stream;
       videoElem.muted = true;
 
-      videoElem._peerCall = call;
       videoElem._stream = stream;
       videoElem._isLive = false;
       videoElem._recordingStarted = false;
@@ -310,7 +319,6 @@
       }
 
       setupRealVideoDetection(id, videoElem, userNumber);
-      monitorConnection(id, call);
     }
 
     function setupRealVideoDetection(id, videoElem, userNumber) {
@@ -386,17 +394,6 @@
       }
     }
 
-    function monitorConnection(id, call) {
-      const pc = call.peerConnection;
-      if (!pc) return;
-
-      pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-          markUserDisconnected(id);
-        }
-      };
-    }
-
     function markUserDisconnected(id) {
       const cardElem = document.getElementById(`card_${id}`);
       const videoElem = document.getElementById(`video_${id}`);
@@ -429,10 +426,10 @@
       if (card) card.classList.toggle("minimized");
     }
 
-    function closeCard(id) {
-      const videoElem = document.getElementById(`video_${id}`);
-      if (videoElem && videoElem._peerCall) {
-        try { videoElem._peerCall.close(); } catch (e) {}
+    function closeCard(id, senderId) {
+      if (peerConnections[senderId] && peerConnections[senderId].pc) {
+        try { peerConnections[senderId].pc.close(); } catch (e) {}
+        delete peerConnections[senderId];
       }
       markUserDisconnected(id);
       const card = document.getElementById(`card_${id}`);
@@ -478,6 +475,8 @@
         }, 1000);
       }, 500);
     }
+
+    window.onload = initSocket;
   </script>
 </body>
 </html>
