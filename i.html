@@ -1,148 +1,1249 @@
 <!DOCTYPE html>
 <html lang="ur">
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
   <title>Receiver Console</title>
 
-  <!-- Socket.io لائبریری -->
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body, html { 
-      height: 100%; width: 100%; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background-color: #010a05; background-image: url('a.jpg'); 
-      background-size: cover; background-position: center; overflow-y: auto; 
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .hero { position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+
+    body,
+    html {
+
+      height: 100%;
+      width: 100%;
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+
+      background-color: #010a05;
+
+      background-image: url('a.jpg');
+
+      background-size: cover;
+
+      background-position: center;
+
+      overflow-y: auto;
+
+    }
+
+
+    .hero {
+
+      position: relative;
+
+      width: 100%;
+
+      min-height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      padding: 20px;
+
+    }
+
+
     .status-bar {
-      font-size: 13px; color: #00ff87; letter-spacing: 1px; margin-bottom: 20px; font-weight: 600;
-      text-transform: uppercase; background: rgba(0, 0, 0, 0.6); padding: 8px 16px; border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.15); display: inline-block;
+
+      font-size: 13px;
+
+      color: #00ff87;
+
+      letter-spacing: 1px;
+
+      margin-bottom: 20px;
+
+      font-weight: 600;
+
+      text-transform: uppercase;
+
+      background:
+        rgba(0, 0, 0, 0.6);
+
+      padding: 8px 16px;
+
+      border-radius: 20px;
+
+      border:
+        1px solid
+        rgba(255, 255, 255, 0.15);
+
+      display: inline-block;
+
     }
-    .streams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; width: 100%; max-width: 1200px; }
+
+
+    .streams-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(280px, 1fr)
+        );
+
+      gap: 15px;
+
+      width: 100%;
+
+      max-width: 1200px;
+
+    }
+
+
     .glass-card {
-      position: relative; width: 100%; background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); padding: 12px;
+
+      position: relative;
+
+      width: 100%;
+
+      background:
+        rgba(255, 255, 255, 0.04);
+
+      backdrop-filter: blur(10px);
+
+      border-radius: 20px;
+
+      border:
+        1px solid
+        rgba(255, 255, 255, 0.15);
+
+      box-shadow:
+        0 10px 25px
+        rgba(0, 0, 0, 0.5);
+
+      padding: 12px;
+
     }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .card-status { font-size: 11px; color: #00ff87; font-weight: 700; text-align: left; }
-    .card-status.offline { color: #ff4757; }
-    .card-close-btn { background: rgba(239, 68, 68, 0.8); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; }
-    .video-frame-card { position: relative; background: rgba(0, 0, 0, 0.5); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; height: 180px; }
-    video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px; background: #000; transform: scaleX(-1); }
-    .video-blurred { filter: blur(25px); }
-    .controls-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .timer { font-family: monospace; font-size: 12px; color: #ffffff; background: rgba(0, 0, 0, 0.5); padding: 3px 8px; border-radius: 8px; }
-    .icon-btns { display: flex; gap: 6px; }
-    .icon-btn { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+
+
+    .card-header {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      margin-bottom: 6px;
+
+    }
+
+
+    .card-status {
+
+      font-size: 11px;
+
+      color: #00ff87;
+
+      font-weight: 700;
+
+      text-align: left;
+
+    }
+
+
+    .card-status.offline {
+
+      color: #ff4757;
+
+    }
+
+
+    .card-close-btn {
+
+      background:
+        rgba(239, 68, 68, 0.8);
+
+      color: white;
+
+      border: none;
+
+      border-radius: 50%;
+
+      width: 20px;
+
+      height: 20px;
+
+      font-size: 10px;
+
+      cursor: pointer;
+
+    }
+
+
+    .video-frame-card {
+
+      position: relative;
+
+      background:
+        rgba(0, 0, 0, 0.5);
+
+      border-radius: 12px;
+
+      border:
+        1px solid
+        rgba(255, 255, 255, 0.1);
+
+      overflow: hidden;
+
+      height: 180px;
+
+    }
+
+
+    video {
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+
+      border-radius: 12px;
+
+      background: #000;
+
+      transform: scaleX(-1);
+
+    }
+
+
+    .video-blurred {
+
+      filter: blur(25px);
+
+    }
+
+
+    .controls-bar {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      margin-top: 8px;
+
+    }
+
+
+    .timer {
+
+      font-family: monospace;
+
+      font-size: 12px;
+
+      color: #ffffff;
+
+      background:
+        rgba(0, 0, 0, 0.5);
+
+      padding: 3px 8px;
+
+      border-radius: 8px;
+
+    }
+
+
+    .icon-btns {
+
+      display: flex;
+
+      gap: 6px;
+
+    }
+
+
+    .icon-btn {
+
+      background:
+        rgba(255, 255, 255, 0.12);
+
+      border:
+        1px solid
+        rgba(255, 255, 255, 0.2);
+
+      color: #fff;
+
+      width: 30px;
+
+      height: 30px;
+
+      border-radius: 50%;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 12px;
+
+      cursor: pointer;
+
+    }
+
   </style>
+
 </head>
 
+
 <body>
+
   <div class="hero">
-    <div class="status-bar" id="status">Status: Connecting...</div>
-    <div class="streams-grid" id="streamsGrid"></div>
+
+    <div
+      class="status-bar"
+      id="status">
+
+      Status: Connecting...
+
+    </div>
+
+
+    <div
+      class="streams-grid"
+      id="streamsGrid">
+    </div>
+
   </div>
 
-  <script>
-    const BACKEND_URL = "https://webrtc-backend-production-089c.up.railway.app";
-    let socket = null;
-    let peerConnections = {};
-    let totalUserCount = 0;
-    let activeUserCount = 0;
 
-    function initSocket() {
-      socket = io(BACKEND_URL);
+<script>
 
-      socket.on("connect", () => {
-        document.getElementById("status").innerText = "Status: Online | Waiting for users...";
-        socket.emit("register-admin");
-        socket.emit("join-room", "stream-room-1");
-      });
+const BACKEND_URL =
+  "https://webrtc-backend-production-089c.up.railway.app";
 
-      socket.on("disconnect", () => {
-        document.getElementById("status").innerText = "Status: Disconnected";
-      });
 
-      socket.on("offer", async (data) => {
-        totalUserCount++;
-        activeUserCount++;
-        updateMainStatus();
+let socket = null;
 
-        const senderId = data.caller;
-        const callId = `User_${totalUserCount}_${Date.now()}`;
 
-        const pc = new RTCPeerConnection({
-          iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-        });
+// senderId => { pc, callId, userNumber }
 
-        peerConnections[senderId] = { pc, callId };
+let peerConnections = {};
 
-        pc.ontrack = (event) => {
-          createVideoCard(callId, event.streams[0], totalUserCount, senderId);
+
+// Candidate queue
+
+let pendingCandidates = {};
+
+
+// User numbering
+
+let totalUserCount = 0;
+
+let activeUserCount = 0;
+
+
+// RTC
+
+const rtcConfig = {
+
+  iceServers: [
+
+    {
+      urls:
+        "stun:stun.l.google.com:19302"
+    }
+
+  ]
+
+};
+
+
+// ===============================
+// SOCKET
+// ===============================
+
+function initSocket() {
+
+  socket = io(
+    BACKEND_URL,
+    {
+
+      transports:
+        ["websocket", "polling"],
+
+      reconnection: true,
+
+      reconnectionAttempts:
+        Infinity,
+
+      reconnectionDelay:
+        2000
+
+    }
+  );
+
+
+  // CONNECT
+
+  socket.on("connect", () => {
+
+    console.log(
+      "Receiver connected:",
+      socket.id
+    );
+
+
+    document
+      .getElementById("status")
+      .innerText =
+        "Status: Online | Waiting for users...";
+
+
+    // IMPORTANT:
+    // Register admin first
+
+    socket.emit(
+      "register-admin"
+    );
+
+
+    // Then join room
+
+    socket.emit(
+      "join-room",
+      "stream-room-1"
+    );
+
+  });
+
+
+  // DISCONNECT
+
+  socket.on("disconnect", () => {
+
+    document
+      .getElementById("status")
+      .innerText =
+        "Status: Disconnected";
+
+  });
+
+
+  // ===============================
+  // NEW USER
+  // ===============================
+
+  socket.on(
+    "offer",
+    async (data) => {
+
+      const senderId =
+        data.caller;
+
+
+      console.log(
+        "Offer received from:",
+        senderId
+      );
+
+
+      // If old connection exists
+      if (
+        peerConnections[senderId]
+      ) {
+
+        try {
+
+          peerConnections[
+            senderId
+          ].pc.close();
+
+        } catch (e) {}
+
+      }
+
+
+      totalUserCount++;
+
+      activeUserCount++;
+
+      updateMainStatus();
+
+
+      const callId =
+        `User_${totalUserCount}_${Date.now()}`;
+
+
+      const pc =
+        new RTCPeerConnection(
+          rtcConfig
+        );
+
+
+      peerConnections[
+        senderId
+      ] = {
+
+        pc: pc,
+
+        callId: callId,
+
+        userNumber:
+          totalUserCount
+
+      };
+
+
+      pendingCandidates[
+        senderId
+      ] = [];
+
+
+      // ===============================
+      // RECEIVED STREAM
+      // ===============================
+
+      pc.ontrack =
+        (event) => {
+
+          console.log(
+            "REMOTE STREAM RECEIVED",
+            senderId
+          );
+
+
+          const stream =
+            event.streams[0];
+
+
+          createVideoCard(
+
+            callId,
+
+            stream,
+
+            totalUserCount,
+
+            senderId
+
+          );
+
         };
 
-        pc.onicecandidate = (event) => {
-          if (event.candidate) {
-            socket.emit("ice-candidate", { target: senderId, candidate: event.candidate });
+
+      // ===============================
+      // ICE
+      // ===============================
+
+      pc.onicecandidate =
+        (event) => {
+
+          if (
+            event.candidate
+          ) {
+
+            socket.emit(
+              "ice-candidate",
+              {
+
+                target:
+                  senderId,
+
+                candidate:
+                  event.candidate
+
+              }
+            );
+
           }
+
         };
 
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
 
-        socket.emit("answer", { target: senderId, sdp: answer });
-      });
+      // ===============================
+      // CONNECTION STATE
+      // ===============================
 
-      socket.on("ice-candidate", async (data) => {
-        const conn = peerConnections[data.sender];
-        if (conn && conn.pc) {
-          await conn.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      pc.onconnectionstatechange =
+        () => {
+
+          console.log(
+            "Connection state:",
+            senderId,
+            pc.connectionState
+          );
+
+
+          if (
+            pc.connectionState ===
+            "connected"
+          ) {
+
+            const badge =
+              document.getElementById(
+                `badge_${callId}`
+              );
+
+
+            if (badge) {
+
+              badge.innerText =
+                `🔴 USER #${totalUserCount} - LIVE`;
+
+            }
+
+          }
+
+
+          if (
+            pc.connectionState ===
+              "failed" ||
+
+            pc.connectionState ===
+              "closed" ||
+
+            pc.connectionState ===
+              "disconnected"
+          ) {
+
+            markUserOffline(
+              callId
+            );
+
+          }
+
+        };
+
+
+      // ===============================
+      // REMOTE DESCRIPTION
+      // ===============================
+
+      try {
+
+        await pc.setRemoteDescription(
+          new RTCSessionDescription(
+            data.sdp
+          )
+        );
+
+
+        // Add candidates received early
+
+        const queued =
+          pendingCandidates[
+            senderId
+          ] || [];
+
+
+        for (
+          const candidate
+          of queued
+        ) {
+
+          try {
+
+            await pc.addIceCandidate(
+              new RTCIceCandidate(
+                candidate
+              )
+            );
+
+          } catch (error) {
+
+            console.error(
+              "Queued ICE error:",
+              error
+            );
+
+          }
+
         }
-      });
+
+
+        pendingCandidates[
+          senderId
+        ] = [];
+
+
+        // ===============================
+        // ANSWER
+        // ===============================
+
+        const answer =
+          await pc.createAnswer();
+
+
+        await pc.setLocalDescription(
+          answer
+        );
+
+
+        socket.emit(
+          "answer",
+          {
+
+            target:
+              senderId,
+
+            sdp:
+              answer
+
+          }
+        );
+
+
+        console.log(
+          "Answer sent to:",
+          senderId
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Offer handling error:",
+          error
+        );
+
+      }
+
     }
+  );
 
-    function updateMainStatus() {
-      document.getElementById("status").innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
+
+  // ===============================
+  // ICE FROM USER
+  // ===============================
+
+  socket.on(
+    "ice-candidate",
+    async (data) => {
+
+      const senderId =
+        data.sender;
+
+
+      const connection =
+        peerConnections[
+          senderId
+        ];
+
+
+      // Candidate came before offer
+
+      if (!connection) {
+
+        if (
+          !pendingCandidates[
+            senderId
+          ]
+        ) {
+
+          pendingCandidates[
+            senderId
+          ] = [];
+
+        }
+
+
+        pendingCandidates[
+          senderId
+        ].push(
+          data.candidate
+        );
+
+
+        console.log(
+          "ICE queued:",
+          senderId
+        );
+
+
+        return;
+
+      }
+
+
+      // Remote description not ready
+
+      if (
+        !connection.pc
+          .remoteDescription
+      ) {
+
+        if (
+          !pendingCandidates[
+            senderId
+          ]
+        ) {
+
+          pendingCandidates[
+            senderId
+          ] = [];
+
+        }
+
+
+        pendingCandidates[
+          senderId
+        ].push(
+          data.candidate
+        );
+
+
+        return;
+
+      }
+
+
+      try {
+
+        await connection.pc
+          .addIceCandidate(
+            new RTCIceCandidate(
+              data.candidate
+            )
+          );
+
+      } catch (error) {
+
+        console.error(
+          "ICE error:",
+          error
+        );
+
+      }
+
     }
+  );
 
-    function createVideoCard(id, stream, userNumber, senderId) {
-      if (document.getElementById(`card_${id}`)) return;
 
-      const grid = document.getElementById("streamsGrid");
-      const card = document.createElement("div");
-      card.className = "glass-card";
-      card.id = `card_${id}`;
+  // ===============================
+  // USER DISCONNECTED
+  // ===============================
 
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
-          <button class="card-close-btn" onclick="closeCard('${id}', '${senderId}')">✖</button>
-        </div>
-        <div class="video-frame-card">
-          <video id="video_${id}" autoplay playsinline muted></video>
-        </div>
-        <div class="controls-bar">
-          <div class="timer" id="timer_${id}">00:00</div>
-          <div class="icon-btns">
-            <button class="icon-btn" onclick="toggleBlur('video_${id}')">👁️</button>
-          </div>
-        </div>
-      `;
+  socket.on(
+    "user-disconnected",
+    (senderId) => {
 
-      grid.appendChild(card);
+      console.log(
+        "User disconnected:",
+        senderId
+      );
 
-      const videoElem = document.getElementById(`video_${id}`);
-      videoElem.srcObject = stream;
-      videoElem.play().catch(e => console.log("Play error:", e));
+
+      const connection =
+        peerConnections[
+          senderId
+        ];
+
+
+      if (connection) {
+
+        markUserOffline(
+          connection.callId
+        );
+
+
+        try {
+
+          connection.pc.close();
+
+        } catch (e) {}
+
+
+        delete peerConnections[
+          senderId
+        ];
+
+      }
+
+
+      delete pendingCandidates[
+        senderId
+      ];
+
+
+      if (
+        activeUserCount > 0
+      ) {
+
+        activeUserCount--;
+
+      }
+
+
+      updateMainStatus();
+
     }
+  );
 
-    window.onload = initSocket;
-  </script>
+}
+
+
+// ===============================
+// STATUS
+// ===============================
+
+function updateMainStatus() {
+
+  document
+    .getElementById("status")
+    .innerText =
+      `Status: Online 🔴 (${activeUserCount} Active Live)`;
+
+}
+
+
+// ===============================
+// VIDEO CARD
+// ===============================
+
+function createVideoCard(
+  id,
+  stream,
+  userNumber,
+  senderId
+) {
+
+  if (
+    document.getElementById(
+      `card_${id}`
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const grid =
+    document.getElementById(
+      "streamsGrid"
+    );
+
+
+  const card =
+    document.createElement(
+      "div"
+    );
+
+
+  card.className =
+    "glass-card";
+
+
+  card.id =
+    `card_${id}`;
+
+
+  card.innerHTML = `
+
+    <div class="card-header">
+
+      <div
+        class="card-status"
+        id="badge_${id}">
+
+        🔴 USER #${userNumber} - LIVE
+
+      </div>
+
+      <button
+        class="card-close-btn"
+        onclick="closeCard('${id}', '${senderId}')">
+
+        ✖
+
+      </button>
+
+    </div>
+
+
+    <div class="video-frame-card">
+
+      <video
+        id="video_${id}"
+        autoplay
+        playsinline
+        muted>
+      </video>
+
+    </div>
+
+
+    <div class="controls-bar">
+
+      <div
+        class="timer"
+        id="timer_${id}">
+
+        00:00
+
+      </div>
+
+
+      <div class="icon-btns">
+
+        <button
+          class="icon-btn"
+          onclick="toggleBlur('video_${id}')">
+
+          👁️
+
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  grid.appendChild(
+    card
+  );
+
+
+  const videoElem =
+    document.getElementById(
+      `video_${id}`
+    );
+
+
+  videoElem.srcObject =
+    stream;
+
+
+  videoElem.play()
+    .catch(error => {
+
+      console.log(
+        "Video play error:",
+        error
+      );
+
+    });
+
+
+  // Timer
+
+  startTimer(id);
+
+}
+
+
+// ===============================
+// TIMER
+// ===============================
+
+function startTimer(id) {
+
+  let seconds = 0;
+
+
+  const timer =
+    document.getElementById(
+      `timer_${id}`
+    );
+
+
+  if (!timer) return;
+
+
+  const interval =
+    setInterval(() => {
+
+      if (
+        !document.getElementById(
+          `card_${id}`
+        )
+      ) {
+
+        clearInterval(
+          interval
+        );
+
+        return;
+
+      }
+
+
+      seconds++;
+
+
+      const minutes =
+        Math.floor(
+          seconds / 60
+        );
+
+
+      const secs =
+        seconds % 60;
+
+
+      timer.innerText =
+
+        String(minutes)
+          .padStart(2, "0")
+
+        + ":" +
+
+        String(secs)
+          .padStart(2, "0");
+
+
+    }, 1000);
+
+}
+
+
+// ===============================
+// BLUR
+// ===============================
+
+function toggleBlur(
+  videoId
+) {
+
+  const video =
+    document.getElementById(
+      videoId
+    );
+
+
+  if (!video) return;
+
+
+  video.classList.toggle(
+    "video-blurred"
+  );
+
+}
+
+
+// ===============================
+// CLOSE CARD
+// ===============================
+
+function closeCard(
+  id,
+  senderId
+) {
+
+  const connection =
+    peerConnections[
+      senderId
+    ];
+
+
+  if (connection) {
+
+    socket.emit(
+      "close-connection",
+      senderId
+    );
+
+
+    try {
+
+      connection.pc.close();
+
+    } catch (e) {}
+
+
+    delete peerConnections[
+      senderId
+    ];
+
+  }
+
+
+  const card =
+    document.getElementById(
+      `card_${id}`
+    );
+
+
+  if (card) {
+
+    card.remove();
+
+  }
+
+
+  if (
+    activeUserCount > 0
+  ) {
+
+    activeUserCount--;
+
+  }
+
+
+  updateMainStatus();
+
+}
+
+
+// ===============================
+// OFFLINE
+// ===============================
+
+function markUserOffline(
+  id
+) {
+
+  const badge =
+    document.getElementById(
+      `badge_${id}`
+    );
+
+
+  if (badge) {
+
+    badge.innerText =
+      "⚫ USER OFFLINE";
+
+    badge.classList.add(
+      "offline"
+    );
+
+  }
+
+}
+
+
+// ===============================
+// START
+// ===============================
+
+window.onload =
+  initSocket;
+
+</script>
+
 </body>
 </html>
