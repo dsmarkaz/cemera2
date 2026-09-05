@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Receiver Console</title>
-  
+
   <!-- PeerJS لائبریری -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -46,7 +46,6 @@
       display: inline-block;
     }
 
-    /* ویڈیو کارڈز کا سائز (Laptop screen ka 1/4th size per video) */
     .streams-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -68,7 +67,6 @@
       transition: all 0.3s ease;
     }
 
-    /* منیمائز (Minimize) حالت */
     .glass-card.minimized {
       padding: 8px 12px;
       border-radius: 12px;
@@ -76,13 +74,8 @@
       border-color: rgba(255, 255, 255, 0.2);
     }
 
-    .glass-card.minimized .video-frame-card {
-      display: none;
-    }
-
-    .glass-card.minimized .controls-bar {
-      margin-top: 0;
-    }
+    .glass-card.minimized .video-frame-card { display: none; }
+    .glass-card.minimized .controls-bar { margin-top: 0; }
 
     .card-header {
       display: flex;
@@ -98,11 +91,8 @@
       text-align: left;
     }
 
-    .card-status.offline {
-      color: #ff4757;
-    }
+    .card-status.offline { color: #ff4757; }
 
-    /* کلوز بٹن (❌) */
     .card-close-btn {
       background: rgba(239, 68, 68, 0.8);
       color: white;
@@ -129,12 +119,12 @@
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
-      height: 180px; /* Small Screen Size */
+      height: 180px;
     }
 
     video { 
       width: 100%; 
-      height: 100%;
+      height: 100%; 
       object-fit: cover;
       display: block; 
       border-radius: 12px; 
@@ -192,87 +182,88 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <div class="hero">
     <div class="status-bar" id="status">Status: Connecting...</div>
     <div class="streams-grid" id="streamsGrid"></div>
   </div>
 
   <script>
-    // Free Public TURN & STUN Servers Setup
-    const peer = new Peer('danish-cam-9988', {
+    /* METERED TURN Creds */
+    const METERED_USERNAME = "YOUR_METERED_USERNAME";
+    const METERED_CREDENTIAL = "YOUR_METERED_CREDENTIAL";
+
+    /* PEERJS SETUP */
+    const peer = new Peer("danish-cam-9988", {
       config: {
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelay',
-            credential: 'openrelay'
-          }
-        ]
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "turn:global.relay.metered.ca:80", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
+          { urls: "turn:global.relay.metered.ca:443", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
+          { urls: "turn:global.relay.metered.ca:443?transport=tcp", username: METERED_USERNAME, credential: METERED_CREDENTIAL },
+          { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: METERED_USERNAME, credential: METERED_CREDENTIAL }
+        ],
+        iceTransportPolicy: "all"
       }
     });
 
     let totalUserCount = 0;
     let activeUserCount = 0;
 
-    peer.on('open', () => {
-      document.getElementById('status').innerText = "Status: Online | Waiting for users...";
+    peer.on("open", () => {
+      document.getElementById("status").innerText = "Status: Online | Waiting for users...";
+      console.log("ADMIN PEER ONLINE");
     });
 
-    peer.on('call', (call) => {
+    peer.on("error", (error) => {
+      console.error("PeerJS ERROR:", error);
+      document.getElementById("status").innerText = "Status: Connection Error";
+    });
+
+    peer.on("call", (call) => {
       totalUserCount++;
       activeUserCount++;
       updateMainStatus();
 
-      call.answer();
+      try {
+        call.answer();
+      } catch (error) {
+        console.error("Call answer error:", error);
+      }
 
       const callId = `User_${totalUserCount}_${Date.now()}`;
 
-      call.on('stream', (remoteStream) => {
+      call.on("stream", (remoteStream) => {
         createVideoCard(callId, remoteStream, totalUserCount, call);
-
-        const videoTrack = remoteStream.getVideoTracks()[0];
-
-        if (videoTrack) {
-          videoTrack.onended = () => markUserDisconnected(callId);
-        }
-
-        call.on('close', () => markUserDisconnected(callId));
-        call.on('error', () => markUserDisconnected(callId));
       });
+
+      call.on("close", () => markUserDisconnected(callId));
+      call.on("error", (error) => markUserDisconnected(callId));
     });
 
     function updateMainStatus() {
-      document.getElementById('status').innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
+      document.getElementById("status").innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
+    }
+
+    function getSupportedMimeType() {
+      const types = ["video/webm;codecs=vp8", "video/webm;codecs=vp9", "video/webm"];
+      for (const type of types) {
+        if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) return type;
+      }
+      return "";
     }
 
     function createVideoCard(id, stream, userNumber, call) {
-      const grid = document.getElementById('streamsGrid');
-
-      const card = document.createElement('div');
-      card.className = 'glass-card';
+      const grid = document.getElementById("streamsGrid");
+      const card = document.createElement("div");
+      card.className = "glass-card";
       card.id = `card_${id}`;
 
       card.innerHTML = `
         <div class="card-header">
-          <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
+          <div class="card-status" id="badge_${id}">🟡 USER #${userNumber} - CONNECTING</div>
           <button class="card-close-btn" title="Close" onclick="closeCard('${id}')">✖</button>
         </div>
         <div class="video-frame-card">
@@ -291,46 +282,133 @@
       grid.appendChild(card);
 
       const videoElem = document.getElementById(`video_${id}`);
-      
       videoElem.srcObject = stream;
       videoElem.muted = true;
-      videoElem.setAttribute('playsinline', 'true');
-      videoElem.setAttribute('autoplay', 'true');
+      videoElem.autoplay = true;
+      videoElem.playsInline = true;
+
       videoElem._peerCall = call;
+      videoElem._stream = stream;
+      videoElem._isLive = false;
+      videoElem._recordingStarted = false;
+      videoElem._timerStarted = false;
 
-      videoElem.play().catch(err => console.log("Autoplay retrying:", err));
-
-      // Recording Setup
-      const chunks = [];
-      let options = { mimeType: 'video/webm' };
-      if (!MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/mp4' };
+      const videoTracks = stream.getVideoTracks();
+      if (!videoTracks.length) {
+        setCardStatus(id, "🔴 USER #" + userNumber + " - NO VIDEO");
+        return;
       }
 
-      try {
-        const mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
-        mediaRecorder.start(1000);
-        videoElem._recorder = mediaRecorder;
-      } catch(e) {
-        console.log("Recorder setup error", e);
+      videoTracks[0].onended = () => markUserDisconnected(id);
+
+      videoElem.play().catch(() => {
+        setTimeout(() => videoElem.play().catch(e => console.log(e)), 500);
+      });
+
+      setupRealVideoDetection(id, videoElem, userNumber);
+      monitorConnection(id, call);
+    }
+
+    function setupRealVideoDetection(id, videoElem, userNumber) {
+      let frameCount = 0;
+      let started = false;
+
+      function markLive() {
+        if (started) return;
+        started = true;
+        videoElem._isLive = true;
+
+        const badge = document.getElementById(`badge_${id}`);
+        if (badge) {
+          badge.innerText = `🔴 USER #${userNumber} - LIVE`;
+          badge.classList.remove("offline");
+        }
+
+        startTimer(videoElem, id);
+        startRecording(videoElem, id);
       }
 
-      videoElem._chunks = chunks;
+      if ("requestVideoFrameCallback" in videoElem) {
+        function checkFrame() {
+          frameCount++;
+          if (frameCount >= 2) markLive();
+          else videoElem.requestVideoFrameCallback(checkFrame);
+        }
+        videoElem.requestVideoFrameCallback(checkFrame);
+      } else {
+        videoElem.addEventListener("playing", () => setTimeout(markLive, 300), { once: true });
+      }
+    }
 
-      // Timer Setup
+    function startTimer(videoElem, id) {
+      if (videoElem._timerStarted) return;
+      videoElem._timerStarted = true;
       let seconds = 0;
+
       const timerElem = document.getElementById(`timer_${id}`);
       const timerInterval = setInterval(() => {
+        if (videoElem._isDisconnected) {
+          clearInterval(timerInterval);
+          return;
+        }
         seconds++;
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String(seconds % 60).padStart(2, '0');
-        timerElem.innerText = `${mins}:${secs}`;
+        const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const secs = String(seconds % 60).padStart(2, "0");
+        if (timerElem) timerElem.innerText = `${mins}:${secs}`;
       }, 1000);
 
       videoElem._timerInterval = timerInterval;
+    }
+
+    function startRecording(videoElem, id) {
+      if (videoElem._recordingStarted || typeof MediaRecorder === "undefined") return;
+      const stream = videoElem.srcObject;
+      if (!stream || !stream.getVideoTracks().length) return;
+
+      const mimeType = getSupportedMimeType();
+      let recorder;
+
+      try {
+        recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      } catch (error) {
+        console.error("MediaRecorder failure:", error);
+        return;
+      }
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+      try {
+        recorder.start(1000);
+        videoElem._recorder = recorder;
+        videoElem._chunks = chunks;
+        videoElem._recordingStarted = true;
+      } catch (error) {
+        console.error("Recording start error:", error);
+      }
+    }
+
+    function monitorConnection(id, call) {
+      const pc = call.peerConnection;
+      if (!pc) return;
+
+      const showState = () => {
+        if ((pc.iceConnectionState === "failed" || pc.connectionState === "failed")) {
+          const badge = document.getElementById(`badge_${id}`);
+          if (badge && !document.getElementById(`video_${id}`)?._isLive) {
+            badge.innerText = "🔴 CONNECTION FAILED";
+            badge.classList.add("offline");
+          }
+        }
+      };
+
+      pc.addEventListener("iceconnectionstatechange", showState);
+      pc.addEventListener("connectionstatechange", showState);
+    }
+
+    function setCardStatus(id, text) {
+      const badge = document.getElementById(`badge_${id}`);
+      if (badge) badge.innerText = text;
     }
 
     function markUserDisconnected(id) {
@@ -340,39 +418,36 @@
       const blurBtn = document.getElementById(`blurBtn_${id}`);
 
       if (videoElem && videoElem._isDisconnected) return;
-      if (videoElem) videoElem._isDisconnected = true;
 
       if (videoElem) {
+        videoElem._isDisconnected = true;
         if (videoElem._timerInterval) clearInterval(videoElem._timerInterval);
         if (videoElem._recorder && videoElem._recorder.state !== "inactive") {
-          videoElem._recorder.stop();
+          try { videoElem._recorder.stop(); } catch (e) {}
         }
       }
 
-      if (cardElem) cardElem.classList.add('minimized');
-
+      if (cardElem) cardElem.classList.add("minimized");
       if (badgeElem) {
         badgeElem.innerText = "⚪ DISCONNECTED (Saved)";
-        badgeElem.classList.add('offline');
+        badgeElem.classList.add("offline");
       }
+      if (blurBtn) blurBtn.style.display = "none";
 
-      if (blurBtn) blurBtn.style.display = 'none';
-
-      activeUserCount--;
-      if (activeUserCount < 0) activeUserCount = 0;
+      activeUserCount = Math.max(0, activeUserCount - 1);
       updateMainStatus();
     }
 
-    // دستی منیمائز اور میکسی مائز (➖)
     function toggleMinimize(id) {
       const card = document.getElementById(`card_${id}`);
-      if (card) card.classList.toggle('minimized');
+      if (card) card.classList.toggle("minimized");
     }
 
-    // کارڈ کلوز کرنے کا طریقہ (❌)
     function closeCard(id) {
       const videoElem = document.getElementById(`video_${id}`);
-      if (videoElem && videoElem._peerCall) videoElem._peerCall.close();
+      if (videoElem && videoElem._peerCall) {
+        try { videoElem._peerCall.close(); } catch (e) {}
+      }
       markUserDisconnected(id);
       const card = document.getElementById(`card_${id}`);
       if (card) card.remove();
@@ -380,34 +455,47 @@
 
     function toggleBlur(videoId) {
       const video = document.getElementById(videoId);
-      if (video) video.classList.toggle('video-blurred');
+      if (video) video.classList.toggle("video-blurred");
     }
 
     function downloadVideo(id) {
       const videoElem = document.getElementById(`video_${id}`);
-      if (!videoElem || !videoElem._chunks || videoElem._chunks.length === 0) {
+      if (!videoElem || !videoElem._chunks) {
         alert("No recording available!");
         return;
       }
 
       if (videoElem._recorder && videoElem._recorder.state === "recording") {
-        videoElem._recorder.requestData();
+        try { videoElem._recorder.requestData(); } catch (e) {}
       }
 
       setTimeout(() => {
-        const blob = new Blob(videoElem._chunks, { type: videoElem._recorder?.mimeType || 'video/webm' });
+        if (!videoElem._chunks || videoElem._chunks.length === 0) {
+          alert("No recording available!");
+          return;
+        }
+
+        const mimeType = videoElem._recorder?.mimeType || "video/webm";
+        const blob = new Blob(videoElem._chunks, { type: mimeType });
+
+        if (!blob.size) {
+          alert("Recording file is empty!");
+          return;
+        }
+
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
+        const a = document.createElement("a");
+        a.style.display = "none";
         a.href = url;
         a.download = `recording_${id}.webm`;
         document.body.appendChild(a);
         a.click();
+
         setTimeout(() => {
           document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        }, 100);
-      }, 200);
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }, 800);
     }
   </script>
 </body>
