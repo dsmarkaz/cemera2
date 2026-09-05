@@ -60,6 +60,7 @@
 
       socket.on("connect", () => {
         document.getElementById("status").innerText = "Status: Online | Waiting for users...";
+        socket.emit("register-admin");
         socket.emit("join-room", "stream-room-1");
       });
 
@@ -72,7 +73,7 @@
         activeUserCount++;
         updateMainStatus();
 
-        const senderId = data.sender;
+        const senderId = data.caller;
         const callId = `User_${totalUserCount}_${Date.now()}`;
 
         const pc = new RTCPeerConnection({
