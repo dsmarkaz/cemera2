@@ -1,373 +1,170 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Receiver Console</title>
-  
-  <!-- PeerJS لائبریری -->
+  <title>Live Feed Receiver</title>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
   <style>
-    /* basic reset اور تھیم ڈسپلے */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body, html { 
-      height: 100%; 
-      width: 100%; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background-color: #010a05; 
-      background-image: url('a.jpg'); 
-      background-size: cover; 
-      background-position: center; 
-      overflow-y: auto; 
+    body { 
+      background: #090d16; color: #38bdf8; text-align: center; 
+      font-family: monospace; padding: 20px; margin: 0; 
     }
 
-    .hero {
+    h1 { margin-bottom: 5px; font-size: 22px; }
+    #status { font-size: 14px; color: #00ff87; margin-bottom: 20px; }
+
+    /* Grid layout to keep videos bounded */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      padding: 10px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Card styling (Laptop screen का 1/4th size) */
+    .video-card {
       position: relative;
-      width: 100%;
-      min-height: 100vh;
+      background: #111827;
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      transition: all 0.3s ease;
     }
 
-    /* اوپر والا لائیو سٹیٹس بار */
-    .status-bar {
-      font-size: 13px;
-      color: #00ff87;
-      letter-spacing: 1px;
-      margin-bottom: 20px;
-      font-weight: 600;
-      text-transform: uppercase;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: inline-block;
-    }
-
-    /* ویڈیو کارڈز کی گرڈ (Grid Layout) */
-    .streams-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 15px;
-      width: 100%;
-      max-width: 1200px;
-    }
-
-    .glass-card {
-      position: relative;
-      width: 100%;
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      padding: 14px;
-      transition: all 0.4s ease;
-    }
-
-    /* کیمرہ بند ہونے پر کارڈ کا چھوٹا (Minimize Taskbar) ہو جانا */
-    .glass-card.minimized {
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.6);
-      border-color: rgba(255, 71, 87, 0.3);
-    }
-
-    .glass-card.minimized .video-frame-card {
-      display: none;
-    }
-
-    .glass-card.minimized .controls-bar {
-      margin-top: 0;
-    }
-
-    .card-status {
-      font-size: 11px;
-      color: #00ff87;
-      margin-bottom: 8px;
-      font-weight: 700;
-      text-align: left;
-    }
-
-    .card-status.offline {
-      color: #ff4757;
-      margin-bottom: 4px;
-    }
-
-    .video-frame-card {
-      position: relative;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      overflow: hidden;
-      min-height: 180px;
-    }
-
-    video { width: 100%; display: block; border-radius: 14px; background: #000; transition: filter 0.3s ease; }
-    
-    /* بلر کرنے والی اینیمیشن */
-    .video-blurred { filter: blur(25px); }
-
-    .controls-bar {
+    /* Controls header for each video */
+    .card-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 10px;
-    }
-
-    .timer {
-      font-family: monospace;
-      font-size: 13px;
-      color: #ffffff;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 4px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .icon-btns {
-      display: flex;
-      gap: 8px;
-    }
-
-    .icon-btn {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #1e293b;
+      padding: 6px 10px;
+      font-size: 12px;
       color: #fff;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s ease;
     }
 
-    .icon-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.05);
+    .btn-group button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .min-btn { background: #eab308 !important; color: #000 !important; }
+    .close-btn { background: #ef4444 !important; }
+
+    video {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: #000;
+      display: block;
+    }
+
+    /* Minimized strip bar */
+    .video-card.minimized video {
+      display: none;
+    }
+    .video-card.minimized {
+      height: auto;
+      border-color: #eab308;
     }
   </style>
 </head>
 <body>
 
-  <div class="hero">
-    <div class="status-bar" id="status">Status: Connecting...</div>
-    <div class="streams-grid" id="streamsGrid"></div>
-  </div>
+  <h1>Live Feed Receiver</h1>
+  <p id="status">Status: Connecting Server...</p>
+
+  <div class="video-grid" id="videoGrid"></div>
 
   <script>
-    // 1. ایڈمن کی آئی ڈی اور TURN Servers کنفیگریشن
-    const peer = new Peer('danish-cam-9988', {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelay',
-            credential: 'openrelay'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelay',
-            credential: 'openrelay'
-          }
-        ]
-      }
+    const peer = new Peer('dsmarkaz-receiver-key-999');
+    const videoGrid = document.getElementById('videoGrid');
+
+    peer.on('open', (id) => {
+      document.getElementById('status').innerText = "Status: Online | Waiting for User...";
     });
 
-    let totalUserCount = 0;
-    let activeUserCount = 0;
-
-    // 2. آن لائن ہونے کا نوٹیفکیشن
-    peer.on('open', () => {
-      document.getElementById('status').innerText = "Status: Online | Waiting for users...";
-    });
-
-    // 3. جیسے ہی نیا یوزر کال کرے گا یہ سگنل ریسیو ہوگا
     peer.on('call', (call) => {
-      totalUserCount++;
-      activeUserCount++;
-      updateMainStatus();
-
-      call.answer(); // کال ریسیو کریں
-
-      const callId = `User_${totalUserCount}_${Date.now()}`;
+      document.getElementById('status').innerText = "Status: Connected! Receiving Feed...";
+      call.answer();
 
       call.on('stream', (remoteStream) => {
-        createVideoCard(callId, remoteStream, totalUserCount);
+        // Purana card hatao agar pehle se mojood ho taakay naya stream connect ho sakay
+        const existingCard = document.getElementById(`card-${call.peer}`);
+        if (existingCard) existingCard.remove();
 
-        const videoTrack = remoteStream.getVideoTracks()[0];
+        // Naya Card Create karein
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.id = `card-${call.peer}`;
 
-        // کیمرہ کی اسٹریم ختم ہوتے ہی کارڈ اور ٹائمر ڈس کنیکٹ کریں
-        if (videoTrack) {
-          videoTrack.onended = () => markUserDisconnected(callId);
-        }
+        // Top Control Bar Header
+        const controls = document.createElement('div');
+        controls.className = 'card-controls';
+        
+        const peerLabel = document.createElement('span');
+        peerLabel.innerText = `User: ${call.peer.substring(0, 8)}...`;
 
-        call.on('close', () => markUserDisconnected(callId));
-        call.on('error', () => markUserDisconnected(callId));
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group';
 
-        // اگر 5 سیکنڈ تک ویڈیو ٹریک کام نہ کرے تو آٹو ڈس کنیکٹ
-        setTimeout(() => {
-          if (videoTrack && videoTrack.readyState === 'ended') {
-            markUserDisconnected(callId);
-          }
-        }, 5000);
+        // Minimize Button (➖)
+        const minBtn = document.createElement('button');
+        minBtn.className = 'min-btn';
+        minBtn.innerText = '➖';
+        minBtn.title = 'Minimize';
+        minBtn.onclick = () => {
+          card.classList.toggle('minimized');
+        };
+
+        // Close Button (❌)
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.innerText = '✖';
+        closeBtn.title = 'Close Feed';
+        closeBtn.onclick = () => {
+          call.close();
+          card.remove();
+        };
+
+        btnGroup.appendChild(minBtn);
+        btnGroup.appendChild(closeBtn);
+        controls.appendChild(peerLabel);
+        controls.appendChild(btnGroup);
+
+        // Video Feed
+        const video = document.createElement('video');
+        video.srcObject = remoteStream;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        video.controls = true;
+
+        card.appendChild(controls);
+        card.appendChild(video);
+        videoGrid.appendChild(card);
+
+        video.play().catch(e => console.log("Autoplay error:", e));
+      });
+
+      call.on('close', () => {
+        const card = document.getElementById(`card-${call.peer}`);
+        if (card) card.remove();
       });
     });
 
-    // 4. اوپر والا لائیو اکاؤنٹ اپ ڈیٹ کرنا
-    function updateMainStatus() {
-      document.getElementById('status').innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
-    }
-
-    // 5. نئی ویڈیو ونڈو بنانے اور لائیو ریکارڈر آن کرنے کا طریقہ
-    function createVideoCard(id, stream, userNumber) {
-      const grid = document.getElementById('streamsGrid');
-
-      const card = document.createElement('div');
-      card.className = 'glass-card';
-      card.id = `card_${id}`;
-
-      card.innerHTML = `
-        <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
-        <div class="video-frame-card">
-          <video id="video_${id}" autoplay playsinline muted></video>
-        </div>
-        <div class="controls-bar">
-          <div class="timer" id="timer_${id}">00:00</div>
-          <div class="icon-btns">
-            <button class="icon-btn" id="blurBtn_${id}" title="Blur / Unblur" onclick="toggleBlur('video_${id}')">👁️</button>
-            <button class="icon-btn" title="Download Recording" onclick="downloadVideo('${id}')">📥</button>
-          </div>
-        </div>
-      `;
-
-      grid.appendChild(card);
-
-      const videoElem = document.getElementById(`video_${id}`);
-      videoElem.srcObject = stream;
-      videoElem.muted = true;
-      videoElem.play().catch(err => console.log("Video Play Error:", err));
-
-      // 6. لائیو ویڈیو ریکارڈنگ سیٹ اپ (ہر 1 سیکنڈ بعد ڈیٹا سیو ہوتا رہے گا)
-      const chunks = [];
-      let options = { mimeType: 'video/webm' };
-      if (!MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/mp4' };
-      }
-
-      const mediaRecorder = new MediaRecorder(stream, options);
-      
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          chunks.push(e.data);
-        }
-      };
-
-      mediaRecorder.start(1000); // 1 Second interval
-      
-      videoElem._recorder = mediaRecorder;
-      videoElem._chunks = chunks;
-
-      // 7. لائیو سیکنڈز کا ٹائمر
-      let seconds = 0;
-      const timerElem = document.getElementById(`timer_${id}`);
-      const timerInterval = setInterval(() => {
-        seconds++;
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String(seconds % 60).padStart(2, '0');
-        timerElem.innerText = `${mins}:${secs}`;
-      }, 1000);
-
-      videoElem._timerInterval = timerInterval;
-    }
-
-    // 8. کیمرہ بند ہونے پر ونڈو کو ٹاسک بار کی طرح منیمائز (Minimize) کرنا
-    function markUserDisconnected(id) {
-      const cardElem = document.getElementById(`card_${id}`);
-      const videoElem = document.getElementById(`video_${id}`);
-      const badgeElem = document.getElementById(`badge_${id}`);
-      const blurBtn = document.getElementById(`blurBtn_${id}`);
-
-      if (videoElem && videoElem._isDisconnected) return;
-      if (videoElem) videoElem._isDisconnected = true;
-
-      // ٹائمر اور ریکارڈر کو اسٹاپ کرنا
-      if (videoElem) {
-        if (videoElem._timerInterval) clearInterval(videoElem._timerInterval);
-        if (videoElem._recorder && videoElem._recorder.state !== "inactive") {
-          videoElem._recorder.stop();
-        }
-      }
-
-      // بڑے کارڈ کو پٹی کی شکل میں منیمائز کرنا
-      if (cardElem) {
-        cardElem.classList.add('minimized');
-      }
-
-      if (badgeElem) {
-        badgeElem.innerText = "⚪ DISCONNECTED (Saved)";
-        badgeElem.classList.add('offline');
-      }
-
-      if (blurBtn) {
-        blurBtn.style.display = 'none';
-      }
-
-      activeUserCount--;
-      if (activeUserCount < 0) activeUserCount = 0;
-      updateMainStatus();
-    }
-
-    // 9. سکرین بلر کرنے کا فنکشن
-    function toggleBlur(videoId) {
-      const video = document.getElementById(videoId);
-      if (video) video.classList.toggle('video-blurred');
-    }
-
-    // 10. ویڈیو ڈاؤن لوڈ کا فکسڈ اور ورکنگ فنکشن
-    function downloadVideo(id) {
-      const videoElem = document.getElementById(`video_${id}`);
-      if (!videoElem || !videoElem._chunks || videoElem._chunks.length === 0) {
-        alert("No recording available to download!");
-        return;
-      }
-
-      if (videoElem._recorder && videoElem._recorder.state === "recording") {
-        videoElem._recorder.requestData();
-      }
-
-      setTimeout(() => {
-        const blob = new Blob(videoElem._chunks, { type: videoElem._recorder?.mimeType || 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `recording_${id}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        }, 100);
-      }, 200);
-    }
+    peer.on('error', (err) => {
+      console.error(err);
+    });
   </script>
 </body>
 </html>
