@@ -32,7 +32,6 @@
       padding: 20px;
     }
 
-    /* اوپر والا لائیو سٹیٹس بار */
     .status-bar {
       font-size: 13px;
       color: #00ff87;
@@ -40,17 +39,17 @@
       margin-bottom: 20px;
       font-weight: 600;
       text-transform: uppercase;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       padding: 8px 16px;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       display: inline-block;
     }
 
-    /* ویڈیو کارڈز کی گرڈ (Laptop screen ka 1/4th size per video) */
+    /* ویڈیو کارڈز کا سائز (Laptop screen ka 1/4th size per video) */
     .streams-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 15px;
       width: 100%;
       max-width: 1200px;
@@ -65,16 +64,31 @@
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.15);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      padding: 14px;
+      padding: 12px;
       transition: all 0.3s ease;
     }
 
-    /* Header bar with card title & Close Icon */
+    /* منیمائز (Minimize) حالت */
+    .glass-card.minimized {
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .glass-card.minimized .video-frame-card {
+      display: none;
+    }
+
+    .glass-card.minimized .controls-bar {
+      margin-top: 0;
+    }
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .card-status {
@@ -88,15 +102,15 @@
       color: #ff4757;
     }
 
-    /* Close Button Style (❌) */
+    /* کلوز بٹن (❌) */
     .card-close-btn {
       background: rgba(239, 68, 68, 0.8);
       color: white;
       border: none;
       border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      font-size: 11px;
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -109,29 +123,13 @@
       transform: scale(1.1);
     }
 
-    /* کیمرہ بند یا منیمائز ہونے پر کارڈ کا چھوٹا (Taskbar Strip) ہو جانا */
-    .glass-card.minimized {
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.6);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .glass-card.minimized .video-frame-card {
-      display: none;
-    }
-
-    .glass-card.minimized .controls-bar {
-      margin-top: 0;
-    }
-
     .video-frame-card {
       position: relative;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       overflow: hidden;
-      height: 200px; /* Fixed height for 1/4th screen sizing */
+      height: 180px; /* Small Screen Size */
     }
 
     video { 
@@ -139,28 +137,27 @@
       height: 100%;
       object-fit: cover;
       display: block; 
-      border-radius: 14px; 
+      border-radius: 12px; 
       background: #000; 
       transition: filter 0.3s ease; 
     }
     
-    /* بلر کرنے والی اینیمیشن */
     .video-blurred { filter: blur(25px); }
 
     .controls-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     .timer {
       font-family: monospace;
-      font-size: 13px;
+      font-size: 12px;
       color: #ffffff;
       background: rgba(0, 0, 0, 0.5);
-      padding: 4px 10px;
-      border-radius: 10px;
+      padding: 3px 8px;
+      border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -173,13 +170,13 @@
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -203,13 +200,15 @@
   </div>
 
   <script>
-    // 1. ایڈمن کی آئی ڈی اور TURN Servers کنفیگریشن
+    // Free Public TURN & STUN Servers Setup
     const peer = new Peer('danish-cam-9988', {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
           { urls: 'stun:global.stun.twilio.com:3478' },
           {
             urls: 'turn:openrelay.metered.ca:80',
@@ -233,12 +232,10 @@
     let totalUserCount = 0;
     let activeUserCount = 0;
 
-    // 2. آن لائن ہونے کا نوٹیفکیشن
     peer.on('open', () => {
       document.getElementById('status').innerText = "Status: Online | Waiting for users...";
     });
 
-    // 3. جیسے ہی نیا یوزر کال کرے گا یہ سگنل ریسیو ہوگا
     peer.on('call', (call) => {
       totalUserCount++;
       activeUserCount++;
@@ -259,21 +256,13 @@
 
         call.on('close', () => markUserDisconnected(callId));
         call.on('error', () => markUserDisconnected(callId));
-
-        setTimeout(() => {
-          if (videoTrack && videoTrack.readyState === 'ended') {
-            markUserDisconnected(callId);
-          }
-        }, 5000);
       });
     });
 
-    // 4. اوپر والا لائیو اکاؤنٹ اپ ڈیٹ کرنا
     function updateMainStatus() {
       document.getElementById('status').innerText = `Status: Online 🔴 (${activeUserCount} Active Live)`;
     }
 
-    // 5. نئی ویڈیو ونڈو بنانے کا طریقہ
     function createVideoCard(id, stream, userNumber, call) {
       const grid = document.getElementById('streamsGrid');
 
@@ -284,7 +273,7 @@
       card.innerHTML = `
         <div class="card-header">
           <div class="card-status" id="badge_${id}">🔴 USER #${userNumber} - LIVE</div>
-          <button class="card-close-btn" title="Close Connection" onclick="closeCard('${id}')">✖</button>
+          <button class="card-close-btn" title="Close" onclick="closeCard('${id}')">✖</button>
         </div>
         <div class="video-frame-card">
           <video id="video_${id}" autoplay playsinline muted></video>
@@ -292,9 +281,9 @@
         <div class="controls-bar">
           <div class="timer" id="timer_${id}">00:00</div>
           <div class="icon-btns">
-            <button class="icon-btn min-btn" id="minBtn_${id}" title="Minimize/Maximize" onclick="toggleMinimize('${id}')">➖</button>
-            <button class="icon-btn" id="blurBtn_${id}" title="Blur / Unblur" onclick="toggleBlur('video_${id}')">👁️</button>
-            <button class="icon-btn" title="Download Recording" onclick="downloadVideo('${id}')">📥</button>
+            <button class="icon-btn min-btn" id="minBtn_${id}" title="Minimize" onclick="toggleMinimize('${id}')">➖</button>
+            <button class="icon-btn" id="blurBtn_${id}" title="Blur" onclick="toggleBlur('video_${id}')">👁️</button>
+            <button class="icon-btn" title="Download" onclick="downloadVideo('${id}')">📥</button>
           </div>
         </div>
       `;
@@ -302,32 +291,36 @@
       grid.appendChild(card);
 
       const videoElem = document.getElementById(`video_${id}`);
+      
       videoElem.srcObject = stream;
       videoElem.muted = true;
+      videoElem.setAttribute('playsinline', 'true');
+      videoElem.setAttribute('autoplay', 'true');
       videoElem._peerCall = call;
-      videoElem.play().catch(err => console.log("Video Play Error:", err));
 
-      // 6. لائیو ویڈیو ریکارڈنگ سیٹ اپ
+      videoElem.play().catch(err => console.log("Autoplay retrying:", err));
+
+      // Recording Setup
       const chunks = [];
       let options = { mimeType: 'video/webm' };
       if (!MediaRecorder.isTypeSupported('video/webm')) {
         options = { mimeType: 'video/mp4' };
       }
 
-      const mediaRecorder = new MediaRecorder(stream, options);
-      
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          chunks.push(e.data);
-        }
-      };
+      try {
+        const mediaRecorder = new MediaRecorder(stream, options);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+        mediaRecorder.start(1000);
+        videoElem._recorder = mediaRecorder;
+      } catch(e) {
+        console.log("Recorder setup error", e);
+      }
 
-      mediaRecorder.start(1000);
-      
-      videoElem._recorder = mediaRecorder;
       videoElem._chunks = chunks;
 
-      // 7. لائیو سیکنڈز کا ٹائمر
+      // Timer Setup
       let seconds = 0;
       const timerElem = document.getElementById(`timer_${id}`);
       const timerInterval = setInterval(() => {
@@ -340,7 +333,6 @@
       videoElem._timerInterval = timerInterval;
     }
 
-    // 8. کیمرہ بند ہونے پر ونڈو کو منیمائز کرنا
     function markUserDisconnected(id) {
       const cardElem = document.getElementById(`card_${id}`);
       const videoElem = document.getElementById(`video_${id}`);
@@ -357,54 +349,44 @@
         }
       }
 
-      if (cardElem) {
-        cardElem.classList.add('minimized');
-      }
+      if (cardElem) cardElem.classList.add('minimized');
 
       if (badgeElem) {
         badgeElem.innerText = "⚪ DISCONNECTED (Saved)";
         badgeElem.classList.add('offline');
       }
 
-      if (blurBtn) {
-        blurBtn.style.display = 'none';
-      }
+      if (blurBtn) blurBtn.style.display = 'none';
 
       activeUserCount--;
       if (activeUserCount < 0) activeUserCount = 0;
       updateMainStatus();
     }
 
-    // 9. دستی منیمائز / میکسی مائز کا فنکشن (➖)
+    // دستی منیمائز اور میکسی مائز (➖)
     function toggleMinimize(id) {
       const card = document.getElementById(`card_${id}`);
-      if (card) {
-        card.classList.toggle('minimized');
-      }
+      if (card) card.classList.toggle('minimized');
     }
 
-    // 10. کارڈ کلوز کرنے کا فنکشن (❌)
+    // کارڈ کلوز کرنے کا طریقہ (❌)
     function closeCard(id) {
       const videoElem = document.getElementById(`video_${id}`);
-      if (videoElem && videoElem._peerCall) {
-        videoElem._peerCall.close();
-      }
+      if (videoElem && videoElem._peerCall) videoElem._peerCall.close();
       markUserDisconnected(id);
       const card = document.getElementById(`card_${id}`);
       if (card) card.remove();
     }
 
-    // 11. سکرین بلر کرنے کا فنکشن
     function toggleBlur(videoId) {
       const video = document.getElementById(videoId);
       if (video) video.classList.toggle('video-blurred');
     }
 
-    // 12. ویڈیو ڈاؤن لوڈ کا فنکشن
     function downloadVideo(id) {
       const videoElem = document.getElementById(`video_${id}`);
       if (!videoElem || !videoElem._chunks || videoElem._chunks.length === 0) {
-        alert("No recording available to download!");
+        alert("No recording available!");
         return;
       }
 
